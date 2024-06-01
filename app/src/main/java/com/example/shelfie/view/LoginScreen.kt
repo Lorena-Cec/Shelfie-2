@@ -1,6 +1,8 @@
 package com.example.shelfie.view
 
 
+import android.content.Context
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -25,23 +27,27 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.shelfie.R
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
 import com.example.shelfie.viewmodel.MainViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun LoginScreen(viewModel : MainViewModel) {
+fun LoginScreen(navController: NavController) {
     var email by remember {
         mutableStateOf("Email/Username")
     }
     var password by remember {
         mutableStateOf("Password")
     }
+    val context = LocalContext.current
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -66,7 +72,8 @@ fun LoginScreen(viewModel : MainViewModel) {
                 onValueChange = { password = it },
             )
             Spacer(modifier = Modifier.height(40.dp))
-            Button(onClick = { /*TODO: Send data to Firebase and go to HomeScreen*/ },
+            Button(onClick = { /*TODO: Send data to Firebase and go to HomeScreen*/
+                signIn(context, email, password, navController)},
                 modifier = Modifier.size(width = 300.dp, height = 60.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = LightPurple),
                 shape = RoundedCornerShape(50)
@@ -75,4 +82,20 @@ fun LoginScreen(viewModel : MainViewModel) {
             }
         }
     }
+}
+
+private fun signIn(context: Context, email: String, password: String, navController: NavController) {
+    FirebaseAuth.getInstance().signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener { task ->
+            if (task.isSuccessful) {
+                // Prijavljeno uspješno
+                Toast.makeText(context, "Logged in successfully", Toast.LENGTH_SHORT).show()
+                navController.navigate("home_screen") {
+                    popUpTo("login_screen") { inclusive = true }
+                }
+            } else {
+                // Prijavljivanje neuspješno
+                Toast.makeText(context, "Login failed: ${task.exception?.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
 }
