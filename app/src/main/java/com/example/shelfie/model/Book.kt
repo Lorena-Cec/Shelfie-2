@@ -1,16 +1,30 @@
 package com.example.shelfie.model
 
-data class Book(
-    val id: String = "",
-    val title: String = "",
-    val author: String = "",
-    val description: String = "",
-    val coverURL: String = "",
-    val status: BookStatus = BookStatus.TO_READ,
+// Book.kt
+data class BookSearchResponse(
+    val items: List<BookItem>
 )
 
-enum class BookStatus{
-    TO_READ,
-    READING,
-    READ
-}
+data class BookItem(
+    val volumeInfo: VolumeInfo
+)
+
+data class VolumeInfo(
+    val title: String,
+    val authors: List<String>,
+    val imageLinks: ImageLinks?,
+    val industryIdentifiers: List<IndustryIdentifier>,
+    val pageCount: Int,
+    val categories: List<String>?,
+    val averageRating: Double?
+)
+
+data class IndustryIdentifier(
+    val type: String,
+    val identifier: String
+)
+
+data class ImageLinks(
+    val smallThumbnail: String,
+    val thumbnail: String
+)

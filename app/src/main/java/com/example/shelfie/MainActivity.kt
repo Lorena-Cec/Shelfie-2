@@ -5,20 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import com.example.shelfie.ui.theme.ShelfieTheme
 import com.example.shelfie.view.StartScreen
 import com.example.shelfie.viewmodel.MainViewModel
-import androidx.activity.viewModels
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.core.view.WindowCompat
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -27,10 +18,9 @@ import com.example.shelfie.view.LibraryScreen
 import com.example.shelfie.view.LoginScreen
 import com.example.shelfie.view.ProfileScreen
 import com.example.shelfie.view.RegisterScreen
-import com.example.shelfie.view.SearchScreen
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
+import com.example.shelfie.view.SearchScreen
+import com.example.shelfie.viewmodel.BooksViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,6 +30,7 @@ class MainActivity : ComponentActivity() {
             ShelfieTheme {
                 val currentUser = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser) }
                 val navController = rememberNavController()
+                val booksViewModel: BooksViewModel by viewModels()
                 FirebaseAuth.getInstance().addAuthStateListener { auth ->
                     currentUser.value = auth.currentUser
                 }
@@ -58,10 +49,10 @@ class MainActivity : ComponentActivity() {
                         RegisterScreen(navController = navController)
                     }
                     composable("search_screen") {
-                        SearchScreen(navController = navController)
+                        SearchScreen(navController = navController, viewModel = booksViewModel)
                     }
                     composable("library_screen") {
-                        LibraryScreen(navController = navController)
+                        LibraryScreen(navController = navController, viewModel = booksViewModel)
                     }
                     composable("profile_screen") {
                         ProfileScreen(navController = navController)
