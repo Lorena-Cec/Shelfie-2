@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.DropdownMenuItem
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.runtime.Composable
@@ -49,17 +49,16 @@ import coil.compose.rememberImagePainter
 import com.example.shelfie.model.BookItem
 import com.example.shelfie.viewmodel.BooksViewModel
 @Composable
-fun BookLists(viewModel: BooksViewModel, book: BookItem) {
+fun BookLists(navController: NavController, viewModel: BooksViewModel, book: BookItem) {
     var menuExpanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    val navController = rememberNavController()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .padding(vertical = 8.dp)
     ) {
-        if (book.volumeInfo.imageLinks != null) {
-            val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+        if (book.volumeInfo.imageLinks?.thumbnail != null) {
+            val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
             val isbn13 = isbn13Identifier?.identifier
             Log.d("BookDetailsScreen", "ISBN-13: $isbn13")
             val url = "https" + book.volumeInfo.imageLinks.thumbnail.substring(4)
@@ -68,7 +67,7 @@ fun BookLists(viewModel: BooksViewModel, book: BookItem) {
                 contentDescription = book.volumeInfo.title,
                 modifier = Modifier
                     .width(150.dp)
-                    .clickable {navController.navigate("bookDetails/${isbn13}")  }
+                    .clickable { navController.navigate("bookDetails/$isbn13") }
                     .height(200.dp),
                 contentScale = ContentScale.Crop
             )
@@ -78,7 +77,8 @@ fun BookLists(viewModel: BooksViewModel, book: BookItem) {
                 .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+        ) {
+            val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
             val isbn13 = isbn13Identifier?.identifier
             Text(
                 text = book.volumeInfo.title,

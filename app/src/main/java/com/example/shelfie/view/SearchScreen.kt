@@ -21,7 +21,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
@@ -65,7 +65,6 @@ fun SearchScreen(navController: NavController, viewModel: BooksViewModel) {
     val bookResponse by viewModel.bookResponse.observeAsState()
     Scaffold(
         bottomBar = { BottomNavigationBar(navController = navController) }
-        // Ostatak vašeg koda...
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -111,7 +110,7 @@ fun SearchScreen(navController: NavController, viewModel: BooksViewModel) {
                                     modifier = Modifier
                                         .padding(8.dp)
                                 ) {
-                                    BookLists(viewModel = viewModel, book = book)
+                                    BookLists(navController = navController, viewModel = viewModel, book = book)
                                 }
                             }
                         }

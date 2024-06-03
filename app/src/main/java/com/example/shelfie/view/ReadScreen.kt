@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.derivedStateOf
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,11 +39,11 @@ import com.example.shelfie.viewmodel.BooksViewModel
 
 @Composable
 fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = viewModel()) {
-    val photos by rememberSaveable { mutableStateOf(List(10) { it }) }
     val booksRead by remember { derivedStateOf { booksViewModel.booksRead } }
     LaunchedEffect("L7aX4ZDOL9bxiBpIla1mooU9Qwu1") {
         booksViewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
     }
+
     var expanded by remember { mutableStateOf(false) }
     Scaffold(
         bottomBar = { BottomNavigationBar(navController = navController) }
@@ -73,7 +74,11 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                             .padding(10.dp, 0.dp)
                     ) {
                         val rowItems = rows[rowIndex]
+                        Log.d("ReadScreen", "Making new rows again")
                         for (book in rowItems) {
+                            Log.d("ReadScreen", "Making new books again")
+                            val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
+                            val isbn13 = isbn13Identifier?.identifier
                             val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
                             url.insert(4, "s")
                             LazyLoadingImage(
@@ -81,6 +86,7 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                                 contentDescription = book.volumeInfo.title,
                                 modifier = Modifier.height(150.dp)
                                     .width(120.dp)
+                                    .clickable { navController.navigate("readDetails/${isbn13}") }
                                     .padding(10.dp, 0.dp),
                                 contentScale = ContentScale.Crop
                             )
@@ -99,6 +105,7 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
+                Log.d("ReadScreen", "Count ${booksRead.size}")
             }
 
         }

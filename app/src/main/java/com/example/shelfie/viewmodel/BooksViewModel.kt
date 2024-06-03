@@ -59,22 +59,19 @@ class BooksViewModel : ViewModel() {
                 RetrofitClient.apiService.searchBooks(query = query, apiKey = "AIzaSyAHMUBEm1_QCPLzS46-Z_knen7isgxqCvM", maxResults = 10)
             }
             if (response.isSuccessful) {
-                _bookResponse.value = response.body()
+                val bookResponse = response.body()
+                val filteredBooks = bookResponse?.items?.filter { book ->
+                    val industryIdentifiers = book.volumeInfo.industryIdentifiers
+                    industryIdentifiers?.any { it.type == "ISBN_13" } == true
+                }
+                _bookResponse.value = bookResponse?.copy(items = filteredBooks ?: emptyList())
             } else {
-                // Obrada neuspješnog zahtjeva
+                Log.d(TAG, "Error updating document")
             }
         }
     }
 
-    /*fun getBookByISBN(isbn: String?): BookItem? {
-        if (isbn.isNullOrEmpty()) {
-            return null
-        }
-        val bookResponse = _bookResponse.value
-        return bookResponse?.items?.find { item ->
-            item.volumeInfo.industryIdentifiers.any { it.identifier == isbn }
-        }
-    }*/
+
 
     private val db = Firebase.firestore
     private suspend fun fetchBooksFromFirestore(userId: String, onBooksFetched: (List<BookItem>, List<BookItem>, List<BookItem>, List<BookItem>) -> Unit) {

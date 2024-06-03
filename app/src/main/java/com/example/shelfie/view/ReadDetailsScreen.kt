@@ -59,7 +59,7 @@ import kotlinx.coroutines.withContext
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BookDetailsScreen(navController: NavController, isbn13: String) {
+fun ReadDetailsScreen(navController: NavController, isbn13: String) {
     Log.d("BookDetailsScreen", "ISBN-13: $isbn13")
     var bookResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
     LaunchedEffect(Unit) {
@@ -86,7 +86,7 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                     title = { Text("Book Details", color = androidx.compose.ui.graphics.Color.White, fontSize = 20.sp)},
                     modifier = Modifier.fillMaxWidth(),
                     navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
+                        IconButton(onClick = { navController.navigate("read_screen") }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = androidx.compose.ui.graphics.Color.White)
                         }
                     },
@@ -157,7 +157,7 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                 val viewModel: BooksViewModel = viewModel()
                 Box(
                     modifier = Modifier
-                        .padding(0.dp,10.dp,0.dp,50.dp),
+                        .padding(0.dp,10.dp,0.dp,10.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     Button(
@@ -183,10 +183,8 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                         }
                         DropdownMenuItem(onClick = {
                             menuExpanded = false
-                            viewModel.addBookToCategory(book, "Read")
-                            Toast.makeText(context, "Added book to Read", Toast.LENGTH_SHORT).show()
                         }) {
-                            Text("Read")
+                            Text("Read", color = LightPurple)
                         }
                         DropdownMenuItem(onClick = {
                             menuExpanded = false
@@ -205,6 +203,15 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    text = "BOOK READ",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 18.dp)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

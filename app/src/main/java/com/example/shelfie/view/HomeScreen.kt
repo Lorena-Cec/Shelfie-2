@@ -1,5 +1,6 @@
 package com.example.shelfie.view
 
+import android.content.res.Configuration
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.Image
@@ -36,7 +37,7 @@ import com.example.shelfie.api.RetrofitClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.Text
+import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.BlendMode.Companion.Screen
@@ -66,15 +67,10 @@ fun HomeScreen(navController: NavController) {
             Box(modifier = Modifier.fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ){
-                Image(
-                    painter = painterResource(id = R.drawable.smallerlogo),
-                    contentDescription = "logo",
-                    modifier = Modifier.size(150.dp),
-                    alignment = Alignment.Center
-                )
+                LogoImage()
             }
             Text(
-                modifier = Modifier.padding(8.dp),
+                modifier = Modifier.padding(8.dp, 0.dp, 0.dp, 8.dp),
                 text = "Fantasy",
                 textAlign = TextAlign.Right,
                 fontSize = 20.sp
@@ -88,6 +84,10 @@ fun HomeScreen(navController: NavController) {
                 if (response.isSuccessful) {
                     bookSearchResponse = response.body()
                     if (bookSearchResponse != null && bookSearchResponse!!.items.isNotEmpty()) {
+                        val filteredBooks = bookSearchResponse!!.items.filter { book ->
+                            val industryIdentifiers = book.volumeInfo.industryIdentifiers
+                            industryIdentifiers != null && industryIdentifiers.find { it.type == "ISBN_13" }?.identifier != null
+                        }
                         val sortedBooks = bookSearchResponse!!.items.sortedByDescending { it.volumeInfo.averageRating }
                         for (book in sortedBooks) {
                             val authors = book.volumeInfo.authors
@@ -97,7 +97,7 @@ fun HomeScreen(navController: NavController) {
                                 "Unknown"
                             }
                         }
-
+                        bookSearchResponse = bookSearchResponse!!.copy(items = filteredBooks)
                     }
                 } else {
                 }
@@ -132,7 +132,7 @@ fun HomeScreen(navController: NavController) {
                                 AsyncImage(
                                     model = url.toString(),
                                     contentDescription = book.volumeInfo.title,
-                                    modifier = Modifier.size(150.dp), // Postavljanje fiksnih dimenzija slike
+                                    modifier = Modifier.size(150.dp),
                                     contentScale = ContentScale.Crop,
                                     error = painterResource(id = R.drawable.cover),
                                 )
@@ -149,15 +149,25 @@ fun HomeScreen(navController: NavController) {
                     }
                 }
             }
-
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                modifier = Modifier.padding(8.dp),
+                text = "Classics",
+                textAlign = TextAlign.Right,
+                fontSize = 20.sp
+            )
             var bookClassicsResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
             LaunchedEffect(Unit) {
                 val response = withContext(Dispatchers.IO) {
-                    RetrofitClient.apiService.searchBooks(query = "subject:classics", apiKey = "AIzaSyAHMUBEm1_QCPLzS46-Z_knen7isgxqCvM", maxResults = 10)
+                    RetrofitClient.apiService.searchBooks(query = "subject:classics", apiKey = "AIzaSyAHMUBEm1_QCPLzS46-Z_knen7isgxqCvM", maxResults = 15)
                 }
                 if (response.isSuccessful) {
                     bookClassicsResponse = response.body()
                     if (bookClassicsResponse != null && bookClassicsResponse!!.items.isNotEmpty()) {
+                        val filteredBooks = bookClassicsResponse!!.items.filter { book ->
+                            val industryIdentifiers = book.volumeInfo.industryIdentifiers
+                            industryIdentifiers != null && industryIdentifiers.find { it.type == "ISBN_13" }?.identifier != null
+                        }
                         val sortedBooks = bookClassicsResponse!!.items.sortedByDescending { it.volumeInfo.averageRating }
                         for (book in sortedBooks) {
                             val authors = book.volumeInfo.authors
@@ -167,25 +177,19 @@ fun HomeScreen(navController: NavController) {
                                 "Unknown"
                             }
                         }
-
+                        bookClassicsResponse = bookClassicsResponse!!.copy(items = filteredBooks)
                     }
                 } else {
                     // Obrada neuspješnog zahtjeva
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                modifier = Modifier.padding(8.dp),
-                text = "Classics",
-                textAlign = TextAlign.Right,
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            if (bookClassicsResponse != null && bookClassicsResponse!!.items.isNotEmpty()) {
+            if (bookClassicsResponse?.items != null && bookClassicsResponse!!.items.isNotEmpty()) {
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier
                         .fillMaxWidth()
+                        .height(200.dp)
                         .padding(10.dp, 0.dp)
                 ) {
                     items(bookClassicsResponse!!.items) { book ->
@@ -196,20 +200,20 @@ fun HomeScreen(navController: NavController) {
                             modifier = Modifier
                                 .width(150.dp) // Postavljanje širine slike na 150 dp
                                 .height(200.dp)
+                                .padding(5.dp, 0.dp)
                                 .clickable {
                                 navController.navigate("bookDetails/${isbn13}")
                             }
-                                .padding(5.dp, 0.dp)
                         ) {
-                            // Prikaz naslovnice knjige
                             if (book.volumeInfo.imageLinks != null) {
                                 val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
                                 url.insert(4, "s")
-                                LazyLoadingImage(
-                                    imageUrl = url.toString(),
+                                AsyncImage(
+                                    model = url.toString(),
                                     contentDescription = book.volumeInfo.title,
-                                    modifier = Modifier.size(150.dp), // Postavljanje fiksnih dimenzija slike
-                                    contentScale = ContentScale.Crop
+                                    modifier = Modifier.size(150.dp),
+                                    contentScale = ContentScale.Crop,
+                                    error = painterResource(id = R.drawable.cover),
                                 )
                             } else {
                                 Box(
@@ -218,7 +222,6 @@ fun HomeScreen(navController: NavController) {
                                 ) {
                                     Text("No Image Available", textAlign = TextAlign.Center)
                                 }
-                                Toast.makeText(context, "No image", Toast.LENGTH_SHORT).show()
                             }
                         }
                     }
@@ -232,6 +235,10 @@ fun HomeScreen(navController: NavController) {
                 if (response.isSuccessful) {
                     bookRomanceResponse = response.body()
                     if (bookRomanceResponse != null && bookRomanceResponse!!.items.isNotEmpty()) {
+                        val filteredBooks = bookRomanceResponse!!.items.filter { book ->
+                            val industryIdentifiers = book.volumeInfo.industryIdentifiers
+                            industryIdentifiers != null && industryIdentifiers.find { it.type == "ISBN_13" }?.identifier != null
+                        }
                         val sortedBooks = bookRomanceResponse!!.items.sortedByDescending { it.volumeInfo.averageRating }
                         for (book in sortedBooks) {
                             val authors = book.volumeInfo.authors
@@ -241,7 +248,7 @@ fun HomeScreen(navController: NavController) {
                                 "Unknown"
                             }
                         }
-
+                        bookRomanceResponse = bookRomanceResponse!!.copy(items = filteredBooks)
                     }
                 } else {
                     // Obrada neuspješnog zahtjeva
@@ -303,7 +310,108 @@ fun HomeScreen(navController: NavController) {
                     }
                 }
             }
+
+            var bookDramaResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
+            LaunchedEffect(Unit) {
+                val response = withContext(Dispatchers.IO) {
+                    RetrofitClient.apiService.searchBooks(query = "subject:drama", apiKey = "AIzaSyAHMUBEm1_QCPLzS46-Z_knen7isgxqCvM", maxResults = 15)
+                }
+                if (response.isSuccessful) {
+                    bookDramaResponse = response.body()
+                    if (bookDramaResponse != null && bookDramaResponse!!.items.isNotEmpty()) {
+                        val filteredBooks = bookDramaResponse!!.items.filter { book ->
+                            val industryIdentifiers = book.volumeInfo.industryIdentifiers
+                            industryIdentifiers != null && industryIdentifiers.find { it.type == "ISBN_13" }?.identifier != null
+                        }
+                        val sortedBooks = bookDramaResponse!!.items.sortedByDescending { it.volumeInfo.averageRating }
+                        for (book in sortedBooks) {
+                            val authors = book.volumeInfo.authors
+                            val authorsText = if (authors != null && authors.isNotEmpty()) {
+                                authors.joinToString(", ")
+                            } else {
+                                "Unknown"
+                            }
+                        }
+                        bookDramaResponse = bookDramaResponse!!.copy(items = filteredBooks)
+                    }
+                } else {
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                modifier = Modifier.padding(8.dp),
+                text = "Drama",
+                textAlign = TextAlign.Right,
+                fontSize = 20.sp
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            if (bookDramaResponse != null && bookDramaResponse!!.items.isNotEmpty()) {
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp)
+                        .padding(10.dp, 0.dp)
+                ) {
+                    items(bookDramaResponse!!.items) { book ->
+                        val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+                        val isbn13 = isbn13Identifier?.identifier
+
+                        Surface(
+                            tonalElevation = 3.dp,
+                            modifier = Modifier
+                                .width(150.dp)
+                                .height(200.dp)
+                                .padding(5.dp, 0.dp)
+                                .clickable {
+                                    navController.navigate("bookDetails/${isbn13}")
+                                }
+                        ) {
+                            if (book.volumeInfo.imageLinks != null) {
+                                val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
+                                url.insert(4, "s")
+                                AsyncImage(
+                                    model = url.toString(),
+                                    contentDescription = book.volumeInfo.title,
+                                    modifier = Modifier.size(150.dp),
+                                    contentScale = ContentScale.Crop,
+                                    error = painterResource(id = R.drawable.cover),
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier.size(150.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painterResource(id = R.drawable.nourl),
+                                        contentDescription = book.volumeInfo.title,
+                                        modifier = Modifier
+                                            .width(150.dp) // Postavljanje širine slike na 150 dp
+                                            .height(200.dp), // Postavljanje fiksnih dimenzija slike
+                                        contentScale = ContentScale.Crop
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(20.dp))
         }
     }
 }
 
+@Composable
+fun LogoImage() {
+    val context = LocalContext.current
+    val isDarkMode = context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+    val logoImageRes = if (isDarkMode) R.drawable.logolight else R.drawable.logodark
+
+    Image(
+        painter = painterResource(id = logoImageRes),
+        contentDescription = "Logo",
+        modifier = Modifier.size(200.dp),
+        alignment = Alignment.Center
+    )
+}

@@ -20,6 +20,7 @@ import com.example.shelfie.view.HomeScreen
 import com.example.shelfie.view.LoginScreen
 import com.example.shelfie.view.MyPhysicalBooksScreen
 import com.example.shelfie.view.ProfileScreen
+import com.example.shelfie.view.ReadDetailsScreen
 import com.example.shelfie.view.ReadScreen
 import com.example.shelfie.view.RegisterScreen
 import com.google.firebase.auth.FirebaseAuth
@@ -76,6 +77,13 @@ class MainActivity : ComponentActivity() {
                         val isbn13 = backStackEntry.arguments?.getString("isbn13")
                         if (isbn13 != null) {
                             BookDetailsScreen(navController = navController, isbn13 = isbn13)
+                        } else {
+                        }
+                    }
+                    composable("readDetails/{isbn13}") { backStackEntry ->
+                        val isbn13 = backStackEntry.arguments?.getString("isbn13")
+                        if (isbn13 != null) {
+                            ReadDetailsScreen(navController = navController, isbn13 = isbn13)
                         } else {
                         }
                     }
