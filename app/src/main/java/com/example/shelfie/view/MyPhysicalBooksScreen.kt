@@ -1,5 +1,8 @@
 package com.example.shelfie.view
 
+import android.util.Log
+import androidx.compose.runtime.derivedStateOf
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.shelfie.ui.theme.DarkPurple
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import coil.compose.AsyncImage
@@ -33,8 +37,11 @@ import com.example.shelfie.viewmodel.BooksViewModel
 
 
 @Composable
-fun LibraryScreen(navController: NavController, viewModel: BooksViewModel) {
-    val photos by rememberSaveable { mutableStateOf(List(10) { it }) }
+fun MyPhysicalBooksScreen(navController: NavController, booksViewModel: BooksViewModel = viewModel()) {
+    val myPhysicalBooks   by remember { derivedStateOf { booksViewModel.myPhysicalBooks   } }
+    LaunchedEffect("L7aX4ZDOL9bxiBpIla1mooU9Qwu1") {
+        booksViewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
+    }
     var expanded by remember { mutableStateOf(false) }
     Scaffold(
         bottomBar = { BottomNavigationBar(navController = navController) }
@@ -47,7 +54,7 @@ fun LibraryScreen(navController: NavController, viewModel: BooksViewModel) {
         ) {
             TopBarWithMenu(
                 navController = navController,
-                title = "All Books",
+                title = "My Physical Books",
                 expanded = expanded,
                 onExpandedChange = { expanded = it }
             )
@@ -57,7 +64,7 @@ fun LibraryScreen(navController: NavController, viewModel: BooksViewModel) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val rows = viewModel.allBooks.chunked(3) // Podijeli knjige u grupe od po tri
+                val rows = myPhysicalBooks.chunked(3)
                 items(rows.size) { rowIndex ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),

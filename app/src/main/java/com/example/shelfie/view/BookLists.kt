@@ -1,7 +1,9 @@
 package com.example.shelfie.view
 
 import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -40,6 +42,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
@@ -48,19 +51,24 @@ import com.example.shelfie.viewmodel.BooksViewModel
 @Composable
 fun BookLists(viewModel: BooksViewModel, book: BookItem) {
     var menuExpanded by remember { mutableStateOf(false) }
-
+    val context = LocalContext.current
+    val navController = rememberNavController()
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .padding(vertical = 8.dp)
     ) {
         if (book.volumeInfo.imageLinks != null) {
+            val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+            val isbn13 = isbn13Identifier?.identifier
+            Log.d("BookDetailsScreen", "ISBN-13: $isbn13")
             val url = "https" + book.volumeInfo.imageLinks.thumbnail.substring(4)
             LazyLoadingImage(
                 imageUrl = url,
                 contentDescription = book.volumeInfo.title,
                 modifier = Modifier
                     .width(150.dp)
+                    .clickable {navController.navigate("bookDetails/${isbn13}")  }
                     .height(200.dp),
                 contentScale = ContentScale.Crop
             )
@@ -70,17 +78,20 @@ fun BookLists(viewModel: BooksViewModel, book: BookItem) {
                 .padding(horizontal = 8.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        ) {val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+            val isbn13 = isbn13Identifier?.identifier
             Text(
                 text = book.volumeInfo.title,
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.clickable { navController.navigate("bookDetails/${isbn13}") }
             )
             val authorsText = book.volumeInfo.authors?.joinToString(", ") ?: "Unknown"
             Text(
                 text = authorsText,
                 fontSize = 14.sp,
-                color = Color.Gray
+                color = Color.Gray,
+                modifier = Modifier.clickable { navController.navigate("bookDetails/${isbn13}") }
             )
             Box {
                 Button(onClick = { menuExpanded = true }) {
@@ -95,26 +106,31 @@ fun BookLists(viewModel: BooksViewModel, book: BookItem) {
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "MyPhysicalBooks")
+                        Toast.makeText(context, "Added book to My Physical Books", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("My Physical Books")
                     }
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "Read")
+                        Toast.makeText(context, "Added book to Read", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("Read")
                     }
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "ToBeRead")
+                        Toast.makeText(context, "Added book to To be Read", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("To Be Read")
                     }
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "CurrentlyReading")
+                        Toast.makeText(context, "Added book to Currently Reading", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("Currently Reading")
+
                     }
                 }
             }

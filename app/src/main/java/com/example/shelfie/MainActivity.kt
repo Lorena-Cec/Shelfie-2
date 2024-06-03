@@ -13,13 +13,18 @@ import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.shelfie.model.BookItem
+import com.example.shelfie.view.BookDetailsScreen
+import com.example.shelfie.view.CurrentlyReadingScreen
 import com.example.shelfie.view.HomeScreen
-import com.example.shelfie.view.LibraryScreen
 import com.example.shelfie.view.LoginScreen
+import com.example.shelfie.view.MyPhysicalBooksScreen
 import com.example.shelfie.view.ProfileScreen
+import com.example.shelfie.view.ReadScreen
 import com.example.shelfie.view.RegisterScreen
 import com.google.firebase.auth.FirebaseAuth
 import com.example.shelfie.view.SearchScreen
+import com.example.shelfie.view.ToBeReadScreen
 import com.example.shelfie.viewmodel.BooksViewModel
 
 class MainActivity : ComponentActivity() {
@@ -31,6 +36,7 @@ class MainActivity : ComponentActivity() {
                 val currentUser = remember { mutableStateOf(FirebaseAuth.getInstance().currentUser) }
                 val navController = rememberNavController()
                 val booksViewModel: BooksViewModel by viewModels()
+
                 FirebaseAuth.getInstance().addAuthStateListener { auth ->
                     currentUser.value = auth.currentUser
                 }
@@ -51,11 +57,27 @@ class MainActivity : ComponentActivity() {
                     composable("search_screen") {
                         SearchScreen(navController = navController, viewModel = booksViewModel)
                     }
-                    composable("library_screen") {
-                        LibraryScreen(navController = navController, viewModel = booksViewModel)
-                    }
                     composable("profile_screen") {
                         ProfileScreen(navController = navController)
+                    }
+                    composable("read_screen") {
+                        ReadScreen(navController = navController)
+                    }
+                    composable("toberead_screen") {
+                        ToBeReadScreen(navController = navController)
+                    }
+                    composable("currentlyreading_screen") {
+                        CurrentlyReadingScreen(navController = navController)
+                    }
+                    composable("myphysicalbooks_screen") {
+                        MyPhysicalBooksScreen(navController = navController)
+                    }
+                    composable("bookDetails/{isbn13}") { backStackEntry ->
+                        val isbn13 = backStackEntry.arguments?.getString("isbn13")
+                        if (isbn13 != null) {
+                            BookDetailsScreen(navController = navController, isbn13 = isbn13)
+                        } else {
+                        }
                     }
                 }
             }

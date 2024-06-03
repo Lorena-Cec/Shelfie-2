@@ -16,7 +16,8 @@ data class VolumeInfo(
     val industryIdentifiers: List<IndustryIdentifier>,
     val pageCount: Int,
     val categories: List<String>?,
-    val averageRating: Double?
+    val averageRating: Double?,
+    val description: String
 )
 
 data class IndustryIdentifier(

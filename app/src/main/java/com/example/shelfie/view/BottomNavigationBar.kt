@@ -108,14 +108,14 @@ fun BottomNavigationBar(navController: NavController) {
                 )
             }
             IconButton(
-                onClick = { navController.navigate("library_screen") },
+                onClick = { navController.navigate("read_screen") },
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
                     Icons.Filled.List,
                     contentDescription = "Library",
                     modifier = Modifier.size(35.dp),
-                    tint = if (currentRoute == "library_screen") Color.White else Color.Black
+                    tint = if (currentRoute == "read_screen") Color.White else Color.Black
                 )
             }
             IconButton(

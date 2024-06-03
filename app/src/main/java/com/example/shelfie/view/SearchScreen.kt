@@ -48,11 +48,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
+import com.example.shelfie.R
 import com.example.shelfie.viewmodel.BooksViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -71,9 +73,9 @@ fun SearchScreen(navController: NavController, viewModel: BooksViewModel) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                modifier = Modifier.padding(20.dp, 40.dp, 10.dp, 10.dp),
+                modifier = Modifier.padding(20.dp, 40.dp, 20.dp, 10.dp),
                 text = "Explore the World of Books",
-                textAlign = TextAlign.Left,
+                textAlign = TextAlign.Center,
                 fontSize = 30.sp,
                 lineHeight = 40.sp
             )
@@ -94,35 +96,6 @@ fun SearchScreen(navController: NavController, viewModel: BooksViewModel) {
                     modifier = Modifier.padding(end = 16.dp) // Dodajemo padding samo s desne strane ikone
                 ) {
                     Icon(Icons.Default.Search, contentDescription = "Search")
-                }
-            }
-            if (query.isEmpty()) {
-                viewModel.randomBooks("subject:fiction")
-                bookResponse?.let { response ->
-                    if (response.items.isNotEmpty()) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Adaptive(minSize = 100.dp)
-                        ) {
-                            items(response.items) { book ->
-                                Box(
-                                    modifier = Modifier
-                                        .padding(8.dp)
-                                ) {
-                                    if (book.volumeInfo.imageLinks != null) {
-                                        val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
-                                        url.insert(4, "s")
-                                        LazyLoadingImage(
-                                            imageUrl = url.toString(),
-                                            contentDescription = book.volumeInfo.title,
-                                            modifier = Modifier.width(150.dp) // Postavljanje širine slike na 150 dp
-                                                .height(200.dp),
-                                            contentScale = ContentScale.Crop
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
                 }
             }
             if(query != ""){
@@ -158,7 +131,11 @@ fun LazyLoadingImage(
     modifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
 ) {
-    val painter: Painter = rememberAsyncImagePainter(imageUrl)
+    val painter: Painter = if (imageUrl.isNullOrEmpty()) {
+        painterResource(id = R.drawable.cover)
+    } else {
+        rememberAsyncImagePainter(imageUrl)
+    }
     Image(
         painter = painter,
         contentDescription = contentDescription,
