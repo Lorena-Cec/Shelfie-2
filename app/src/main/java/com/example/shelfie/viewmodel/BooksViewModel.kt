@@ -1,11 +1,14 @@
 package com.example.shelfie.viewmodel
 
 import android.content.ContentValues.TAG
+import android.graphics.Bitmap
+import android.net.Uri
 import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -183,8 +186,46 @@ class BooksViewModel : ViewModel() {
             }
         }
     }
+    fun uploadImage(uri: Uri) {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let {
+            val userRef = db.collection("users").document(it.uid)
+            userRef.get().addOnSuccessListener { document ->
+                if (document.exists()) {
+                    userRef.update("ProfilePicture", uri)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error updating document", e)
+                        }
+                }
+            }
+        }
+    }
+/*
+    fun fetchImage(userId: String, uri: (Uri) -> Unit) {
+        val db = FirebaseFirestore.getInstance()
+        try {
+            val document = db.collection("users").document(userId).get().await()
+            if (document.exists()) {
+                val currentlyReading = document.get("CurrentlyReading") as? List<Map<String, Any>> ?: emptyList()
+                val read = document.get("Read") as? List<Map<String, Any>> ?: emptyList()
+                val toBeRead = document.get("ToBeRead") as? List<Map<String, Any>> ?: emptyList()
+                val myPhysicalBooks = document.get("MyPhysicalBooks") as? List<Map<String, Any>> ?: emptyList()
 
+                val currentlyReadingBooks = currentlyReading.map { it.toBookItem() }
+                val readBooks = read.map { it.toBookItem() }
+                val toBeReadBooks = toBeRead.map { it.toBookItem() }
+                val myPhysicalBooksList = myPhysicalBooks.map { it.toBookItem() }
 
+                onBooksFetched(currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList)
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+*/
     private fun BookItem.toMap(): Map<String, Any> {
         val volumeInfoMap = mutableMapOf<String, Any>(
             "title" to volumeInfo.title,

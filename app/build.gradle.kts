@@ -59,6 +59,9 @@ dependencies {
     implementation(libs.firebase.firestore)
     implementation(libs.firebase.auth.ktx)
     implementation(libs.material3.android)
+    implementation(libs.androidx.camera.core)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -99,4 +102,14 @@ dependencies {
     implementation ("io.coil-kt:coil-compose:2.5.0")
     implementation ("androidx.compose.material3:material3-android:1.2.1")
     implementation ("androidx.compose.material3:material3:1.2.1")
+    implementation ("com.google.mlkit:barcode-scanning:17.2.0")
+    implementation ("com.google.accompanist:accompanist-permissions:0.35.1-alpha")
+    implementation ("com.google.guava:guava:31.0.1-android")
+
+    implementation ("androidx.camera:camera-core:1.1.0-alpha10")
+    implementation ("androidx.camera:camera-camera2:1.1.0-alpha10")
+    implementation ("androidx.camera:camera-lifecycle:1.1.0-alpha10")
+    implementation ("androidx.camera:camera-view:1.0.0-alpha23")
+    implementation ("androidx.camera:camera-extensions:1.0.0-alpha23")
+
 }

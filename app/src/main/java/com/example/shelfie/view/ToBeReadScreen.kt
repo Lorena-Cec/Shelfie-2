@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.runtime.derivedStateOf
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -73,6 +74,8 @@ fun ToBeReadScreen(navController: NavController, booksViewModel: BooksViewModel 
                     ) {
                         val rowItems = rows[rowIndex]
                         for (book in rowItems) {
+                            val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
+                            val isbn13 = isbn13Identifier?.identifier
                             val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
                             url.insert(4, "s")
                             LazyLoadingImage(
@@ -80,6 +83,7 @@ fun ToBeReadScreen(navController: NavController, booksViewModel: BooksViewModel 
                                 contentDescription = book.volumeInfo.title,
                                 modifier = Modifier.height(150.dp)
                                     .width(120.dp)
+                                    .clickable { navController.navigate("toBeReadDetails/${isbn13}") }
                                     .padding(10.dp, 0.dp),
                                 contentScale = ContentScale.Crop
                             )

@@ -59,7 +59,7 @@ import kotlinx.coroutines.withContext
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReadDetailsScreen(navController: NavController, isbn13: String) {
+fun CurrentlyReadingDetailsScreen(navController: NavController, isbn13: String) {
     Log.d("ReadDetailsScreen", "ISBN-13: $isbn13")
     var bookResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
     LaunchedEffect(Unit) {
@@ -86,7 +86,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String) {
                     title = { Text("Book Details", color = androidx.compose.ui.graphics.Color.White, fontSize = 20.sp)},
                     modifier = Modifier.fillMaxWidth(),
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigate("read_screen") }) {
+                        IconButton(onClick = { navController.navigate("currentlyreading_screen") }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = androidx.compose.ui.graphics.Color.White)
                         }
                     },

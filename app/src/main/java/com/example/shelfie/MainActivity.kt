@@ -1,5 +1,6 @@
 package com.example.shelfie
 
+import BarcodeScreen
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,9 +16,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.shelfie.model.BookItem
 import com.example.shelfie.view.BookDetailsScreen
+import com.example.shelfie.view.CurrentlyReadingDetailsScreen
 import com.example.shelfie.view.CurrentlyReadingScreen
 import com.example.shelfie.view.HomeScreen
 import com.example.shelfie.view.LoginScreen
+import com.example.shelfie.view.MyPhysicalBooksDetailsScreen
 import com.example.shelfie.view.MyPhysicalBooksScreen
 import com.example.shelfie.view.ProfileScreen
 import com.example.shelfie.view.ReadDetailsScreen
@@ -25,6 +28,7 @@ import com.example.shelfie.view.ReadScreen
 import com.example.shelfie.view.RegisterScreen
 import com.google.firebase.auth.FirebaseAuth
 import com.example.shelfie.view.SearchScreen
+import com.example.shelfie.view.ToBeReadDetailsScreen
 import com.example.shelfie.view.ToBeReadScreen
 import com.example.shelfie.viewmodel.BooksViewModel
 
@@ -86,6 +90,30 @@ class MainActivity : ComponentActivity() {
                             ReadDetailsScreen(navController = navController, isbn13 = isbn13)
                         } else {
                         }
+                    }
+                    composable("myPhysicalBooksDetails/{isbn13}") { backStackEntry ->
+                        val isbn13 = backStackEntry.arguments?.getString("isbn13")
+                        if (isbn13 != null) {
+                            MyPhysicalBooksDetailsScreen(navController = navController, isbn13 = isbn13)
+                        } else {
+                        }
+                    }
+                    composable("toBeReadDetails/{isbn13}") { backStackEntry ->
+                        val isbn13 = backStackEntry.arguments?.getString("isbn13")
+                        if (isbn13 != null) {
+                            ToBeReadDetailsScreen(navController = navController, isbn13 = isbn13)
+                        } else {
+                        }
+                    }
+                    composable("currentlyReadingDetails/{isbn13}") { backStackEntry ->
+                        val isbn13 = backStackEntry.arguments?.getString("isbn13")
+                        if (isbn13 != null) {
+                            CurrentlyReadingDetailsScreen(navController = navController, isbn13 = isbn13)
+                        } else {
+                        }
+                    }
+                    composable("barcode_screen") {
+                        BarcodeScreen(navController = navController, viewModel = booksViewModel)
                     }
                 }
             }
