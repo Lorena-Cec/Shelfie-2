@@ -118,7 +118,7 @@ fun HomeScreen(navController: NavController) {
                         Surface(
                             tonalElevation = 3.dp,
                             modifier = Modifier
-                                .width(150.dp) // Postavljanje širine slike na 150 dp
+                                .width(150.dp)
                                 .height(200.dp)
                                 .padding(5.dp, 0.dp)
                                 .clickable {

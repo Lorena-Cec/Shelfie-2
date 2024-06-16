@@ -2,6 +2,7 @@ package com.example.shelfie.view
 
 import android.app.Activity
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -41,123 +42,147 @@ import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.rememberImagePainter
 import com.example.shelfie.R
+import com.example.shelfie.model.BookItem
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.shelfie.viewmodel.BooksViewModel
 
 @Composable
-fun ProfileScreen(navController: NavController) {
-
-    val photos by rememberSaveable { mutableStateOf(List(10) { it }) }
-
-    Scaffold(
-        bottomBar = { BottomNavigationBar(navController = navController) }
-    ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.Start
-        ) {
-            Box(modifier = Modifier
-                .fillMaxWidth()
-                .background(color = DarkPurple)
-                .height(80.dp),
-                contentAlignment = Alignment.TopStart
-            ){
-                Text(
-                    text = "My Profile",
+fun ProfileScreen(navController: NavController, viewModel: BooksViewModel) {
+    val favorites by viewModel.favorites.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
+    }
+        Scaffold(
+            bottomBar = { BottomNavigationBar(navController = navController) }
+        ) { innerPadding ->
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(start = 30.dp, top = 25.dp),
-                    textAlign = TextAlign.Start,
-                    fontSize = 24.sp,
-                    color = Color.White
-                )
-            }
-
-            ProfileImage(viewModel())
-
-            Text(
-                text = "My favorite books",
-                modifier = Modifier.padding(8.dp),
-                textAlign = TextAlign.Center,
-                fontSize = 20.sp
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(10.dp, 0.dp)
-            ) {
-                items(photos, key = { it }) {
-                    Surface(
-                        tonalElevation = 3.dp,
+                        .background(color = DarkPurple)
+                        .height(80.dp),
+                    contentAlignment = Alignment.TopStart
+                ){
+                    Text(
+                        text = "My Profile",
                         modifier = Modifier
-                            .size(150.dp)
-                            .padding(10.dp, 0.dp)
-                    ) {
-                        // Ovdje možete dodati logiku za prikaz omiljenih knjiga
+                            .fillMaxWidth()
+                            .padding(start = 30.dp, top = 25.dp),
+                        textAlign = TextAlign.Start,
+                        fontSize = 24.sp,
+                        color = Color.White
+                    )
+                }
+
+                ProfileImage(viewModel)
+
+                Text(
+                    text = "My favorite books",
+                    modifier = Modifier.padding(8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 20.sp,
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                LazyRow(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(210.dp)
+                        .padding(5.dp, 0.dp)
+                ) {
+                    items(favorites) { book ->
+                        BookItemSurface(book = book, navController)
                     }
                 }
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(color = DarkPurple)
+                        .height(30.dp),
+                ) {}
+
+                Spacer(modifier = Modifier.height(16.dp))
             }
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(color = DarkPurple)
-                    .height(30.dp),
-            ) {}
-
-            Spacer(modifier = Modifier.height(16.dp))
-
         }
     }
-}
+
 
 @Composable
-fun ProfileImage(viewModel: BooksViewModel){
-    val imageUri = rememberSaveable { mutableStateOf("") }
-    val painter = rememberImagePainter(
-        if (imageUri.value.isEmpty())
-            R.drawable.profile
-        else
-            imageUri.value
-    )
-    val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()
-    ) {uri: Uri? ->
-        uri?.let{
-            imageUri.value = it.toString()
-            viewModel.uploadImage(it)
-        }
-    }
-
-    Column(
+fun BookItemSurface(book: BookItem, navController: NavController) {
+    Surface(
+        color = Color.White,
         modifier = Modifier
-            .padding(end = 30.dp)
-            .fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .width(150.dp)
+            .height(210.dp)
+            .padding(5.dp, 0.dp)
     ) {
-        Card(
-            shape = CircleShape,
+        val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
+        val isbn13 = isbn13Identifier?.identifier
+        val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
+        url.insert(4, "s")
+        LazyLoadingImage(
+            imageUrl = url.toString(),
+            contentDescription = book.volumeInfo.title,
             modifier = Modifier
-                .size(120.dp)
-                .offset(y = (-40).dp)
-                .align(Alignment.End),
+                .size(150.dp)
+                .clickable { navController.navigate("readDetails/${isbn13}") },
+            contentScale = ContentScale.Crop
+        )
+    }
+    Log.d("ProfileScreen", "Title: ${book.volumeInfo.title}")
+}
+
+    @Composable
+    fun ProfileImage(viewModel: BooksViewModel){
+        val imageUri = rememberSaveable { mutableStateOf("") }
+        val painter = rememberImagePainter(
+            if (imageUri.value.isEmpty())
+                R.drawable.profile
+            else
+                imageUri.value
+        )
+        val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()
+        ) {uri: Uri? ->
+            uri?.let{
+                imageUri.value = it.toString()
+                viewModel.uploadImage(it)
+            }
+        }
+
+        Column(
+            modifier = Modifier
+                .padding(end = 30.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Image(
-                painter = painter,
-                contentDescription = null,
+            Card(
+                shape = CircleShape,
                 modifier = Modifier
-                    .wrapContentSize()
                     .size(120.dp)
-                    .clickable { launcher.launch("image/*") },
-                contentScale = ContentScale.Crop
-            )
+                    .offset(y = (-40).dp)
+                    .align(Alignment.End),
+            ) {
+                Image(
+                    painter = painter,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .wrapContentSize()
+                        .size(120.dp)
+                        .clickable { launcher.launch("image/*") },
+                    contentScale = ContentScale.Crop
+                )
+            }
         }
     }
-}

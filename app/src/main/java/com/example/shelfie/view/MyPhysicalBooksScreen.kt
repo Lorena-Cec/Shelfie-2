@@ -36,6 +36,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -52,11 +53,13 @@ import com.example.shelfie.viewmodel.BooksViewModel
 
 @Composable
 fun MyPhysicalBooksScreen(navController: NavController, booksViewModel: BooksViewModel = viewModel()) {
-    val myPhysicalBooks   by remember { derivedStateOf { booksViewModel.myPhysicalBooks   } }
     var showDialog by remember { mutableStateOf(false) }
-    LaunchedEffect("L7aX4ZDOL9bxiBpIla1mooU9Qwu1") {
+    val myPhysicalBooks by booksViewModel.myPhysicalBooks.collectAsState()
+
+    LaunchedEffect(Unit) {
         booksViewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
     }
+
     var expanded by remember { mutableStateOf(false) }
     Scaffold(
         bottomBar = { BottomNavigationBar(navController = navController) },

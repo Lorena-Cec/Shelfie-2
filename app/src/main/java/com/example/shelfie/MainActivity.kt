@@ -63,7 +63,7 @@ class MainActivity : ComponentActivity() {
                         SearchScreen(navController = navController, viewModel = booksViewModel)
                     }
                     composable("profile_screen") {
-                        ProfileScreen(navController = navController)
+                        ProfileScreen(navController = navController, viewModel = booksViewModel)
                     }
                     composable("read_screen") {
                         ReadScreen(navController = navController)
@@ -87,7 +87,7 @@ class MainActivity : ComponentActivity() {
                     composable("readDetails/{isbn13}") { backStackEntry ->
                         val isbn13 = backStackEntry.arguments?.getString("isbn13")
                         if (isbn13 != null) {
-                            ReadDetailsScreen(navController = navController, isbn13 = isbn13)
+                            ReadDetailsScreen(navController = navController, isbn13 = isbn13, viewModel = booksViewModel)
                         } else {
                         }
                     }

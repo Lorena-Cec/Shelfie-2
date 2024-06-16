@@ -29,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
@@ -37,10 +39,12 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
@@ -56,13 +60,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReadDetailsScreen(navController: NavController, isbn13: String) {
+fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: BooksViewModel)  {
     Log.d("ReadDetailsScreen", "ISBN-13: $isbn13")
     var bookResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
+    val context = LocalContext.current
+    val favorites by viewModel.favorites.collectAsState()
     LaunchedEffect(Unit) {
+        viewModel.fetchFavorites()
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.apiService.searchBooks(
                 query = "isbn:$isbn13",
@@ -83,16 +90,35 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Book Details", color = androidx.compose.ui.graphics.Color.White, fontSize = 20.sp)},
+                    title = { Text("Book Details", color = Color.White, fontSize = 20.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     navigationIcon = {
                         IconButton(onClick = { navController.navigate("read_screen") }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = androidx.compose.ui.graphics.Color.White)
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
+                        }
+                    },
+                    actions = {
+                        val isFavorite = favorites.any { it.volumeInfo.title == book.volumeInfo.title }
+                        Log.d("ReadDetailsScreen", "Is favorite: $isFavorite")
+                        IconButton(onClick = {
+                            if (isFavorite) {
+                                viewModel.removeFromFavorites(book)
+                                Toast.makeText(context, "Removed from Favorites", Toast.LENGTH_SHORT).show()
+                            } else {
+                                viewModel.addToFavorites(book)
+                                Toast.makeText(context, "Added to Favorites", Toast.LENGTH_SHORT).show()
+                            }
+                        }) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Add to Favorites",
+                                tint = Color.White
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = DarkPurple)
                 )
-            },
+            }
         ) { innerPadding ->
             Column(
                 modifier = Modifier

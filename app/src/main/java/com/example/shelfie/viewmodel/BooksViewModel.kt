@@ -34,6 +34,8 @@ import com.google.firebase.auth.auth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 
 class BooksViewModel : ViewModel() {
@@ -42,17 +44,20 @@ class BooksViewModel : ViewModel() {
     var errorMessage: String by mutableStateOf("")
     private val _bookResponse = MutableLiveData<BookSearchResponse>()
 
-    private val _booksRead = mutableStateListOf<BookItem>()
-    val booksRead: List<BookItem> = _booksRead
+    private val _currentlyReading = MutableStateFlow<List<BookItem>>(emptyList())
+    val currentlyReading: StateFlow<List<BookItem>> = _currentlyReading
 
-    private val _booksToRead = mutableStateListOf<BookItem>()
-    val booksToRead: List<BookItem> = _booksToRead
+    private val _booksRead = MutableStateFlow<List<BookItem>>(emptyList())
+    val booksRead: StateFlow<List<BookItem>> = _booksRead
 
-    private val _myPhysicalBooks = mutableStateListOf<BookItem>()
-    val myPhysicalBooks: List<BookItem> = _myPhysicalBooks
+    private val _booksToRead = MutableStateFlow<List<BookItem>>(emptyList())
+    val booksToRead: StateFlow<List<BookItem>> = _booksToRead
 
-    private val _currentlyReading = mutableStateListOf<BookItem>()
-    val currentlyReading: List<BookItem> = _currentlyReading
+    private val _myPhysicalBooks = MutableStateFlow<List<BookItem>>(emptyList())
+    val myPhysicalBooks: StateFlow<List<BookItem>> = _myPhysicalBooks
+
+    private val _favorites = MutableStateFlow<List<BookItem>>(emptyList())
+    val favorites: StateFlow<List<BookItem>> = _favorites
 
     val bookResponse: LiveData<BookSearchResponse>
         get() = _bookResponse
@@ -78,7 +83,6 @@ class BooksViewModel : ViewModel() {
 
     private val db = Firebase.firestore
     private suspend fun fetchBooksFromFirestore(userId: String, onBooksFetched: (List<BookItem>, List<BookItem>, List<BookItem>, List<BookItem>) -> Unit) {
-        val db = FirebaseFirestore.getInstance()
         try {
             val document = db.collection("users").document(userId).get().await()
             if (document.exists()) {
@@ -95,16 +99,19 @@ class BooksViewModel : ViewModel() {
                 onBooksFetched(currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList)
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            Log.e("BooksViewModel", "Error fetching books from Firestore", e)
         }
     }
+
     fun fetchBooks(userId: String) {
         viewModelScope.launch {
-            fetchBooksFromFirestore(userId) { currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList ->
-                _currentlyReading.addAll(currentlyReadingBooks)
-                _booksRead.addAll(readBooks)
-                _booksToRead.addAll(toBeReadBooks)
-                _myPhysicalBooks.addAll(myPhysicalBooksList)
+            withContext(Dispatchers.IO) {
+                fetchBooksFromFirestore(userId) { currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList ->
+                    _currentlyReading.value = currentlyReadingBooks
+                    _booksRead.value = readBooks
+                    _booksToRead.value = toBeReadBooks
+                    _myPhysicalBooks.value = myPhysicalBooksList
+                }
             }
         }
     }
@@ -138,28 +145,64 @@ class BooksViewModel : ViewModel() {
 
     // Dodajte ostale kategorije knjiga ako su potrebne
 
+
     fun addBookToCategory(book: BookItem, category: String) {
         when (category) {
             "Read" -> {
-                _booksRead.add(book)
+                _booksRead.value += book
                 updateFirestoreCategory(category, book)
             }
             "ToBeRead" -> {
-                _booksToRead.add(book)
+                _booksToRead.value += book
                 updateFirestoreCategory(category, book)
-
             }
             "MyPhysicalBooks" -> {
-                _myPhysicalBooks.add(book)
+                _myPhysicalBooks.value += book
                 updateFirestoreCategory(category, book)
-
             }
             "CurrentlyReading" -> {
-                _currentlyReading.add(book)
+                _currentlyReading.value += book
                 updateFirestoreCategory(category, book)
-
             }
             else -> throw IllegalArgumentException("Unsupported category: $category")
+        }
+    }
+
+    fun removeBookFromCategory(book: BookItem, category: String) {
+        when (category) {
+            "Read" -> {
+                val updatedRead = _booksRead.value.filter { it.volumeInfo.title != book.volumeInfo.title }
+                _booksRead.value = updatedRead
+                updateRemoveFirestore(category, updatedRead)
+            }
+            "ToBeRead" -> {
+                val updatedRead = _booksToRead.value.filter { it.volumeInfo.title != book.volumeInfo.title }
+                _booksToRead.value = updatedRead
+                updateRemoveFirestore(category, updatedRead)
+            }
+            "MyPhysicalBooks" -> {
+                _myPhysicalBooks.value += book
+                updateFirestoreCategory(category, book)
+            }
+            "CurrentlyReading" -> {
+                _currentlyReading.value += book
+                updateFirestoreCategory(category, book)
+            }
+            else -> throw IllegalArgumentException("Unsupported category: $category")
+        }
+    }
+
+    private fun updateRemoveFirestore(category: String, updatedFavorites: List<BookItem>) {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.update(category, updatedFavorites.map { it.toMap() })
+                .addOnSuccessListener {
+                    Log.d(TAG, "Category updated successfully in Firestore")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Error updating category in Firestore", e)
+                }
         }
     }
 
@@ -186,6 +229,64 @@ class BooksViewModel : ViewModel() {
             }
         }
     }
+
+
+
+    fun addToFavorites(book: BookItem) {
+        val updatedFavorites = _favorites.value.toMutableList()
+        updatedFavorites.add(book)
+        _favorites.value = updatedFavorites
+        updateFirestoreFavorites()
+    }
+
+    fun removeFromFavorites(book: BookItem) {
+        val updatedFavorites = _favorites.value.filter { it.volumeInfo.title != book.volumeInfo.title }
+        _favorites.value = updatedFavorites
+        updateFirestoreFavorite(updatedFavorites)
+    }
+
+    fun fetchFavorites() {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.get().addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val favorites = document.get("Favorites") as? List<Map<String, Any>> ?: emptyList()
+                    _favorites.value = favorites.map { it.toBookItem() }
+                }
+            }.addOnFailureListener { e ->
+                // Handle failure
+            }
+        }
+    }
+    private fun updateFirestoreFavorite(updatedFavorites: List<BookItem>) {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.update("Favorites", updatedFavorites.map { it.toMap() })
+                .addOnSuccessListener {
+                    Log.d(TAG, "Favorites updated successfully in Firestore")
+                }
+                .addOnFailureListener { e ->
+                    Log.e(TAG, "Error updating favorites in Firestore", e)
+                }
+        }
+    }
+
+    private fun updateFirestoreFavorites() {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.update("Favorites", _favorites.value.map { it.toMap() })
+                .addOnSuccessListener {
+                    // Handle success
+                }
+                .addOnFailureListener { e ->
+                    // Handle failure
+                }
+        }
+    }
+
     fun uploadImage(uri: Uri) {
         val currentUser = Firebase.auth.currentUser
         currentUser?.let {

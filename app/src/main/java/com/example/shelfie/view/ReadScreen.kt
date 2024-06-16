@@ -29,24 +29,53 @@ import androidx.compose.ui.unit.sp
 import com.example.shelfie.ui.theme.DarkPurple
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.AlertDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import coil.compose.AsyncImage
 import com.example.shelfie.model.BookItem
+import com.example.shelfie.ui.theme.LightPurple
 import com.example.shelfie.viewmodel.BooksViewModel
 
 
 @Composable
 fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = viewModel()) {
-    val booksRead by remember { derivedStateOf { booksViewModel.booksRead } }
-    LaunchedEffect("L7aX4ZDOL9bxiBpIla1mooU9Qwu1") {
+    var showDialog by remember { mutableStateOf(false) }
+    val booksRead by booksViewModel.booksRead.collectAsState()
+
+    LaunchedEffect(Unit) {
         booksViewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
     }
 
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+
     Scaffold(
-        bottomBar = { BottomNavigationBar(navController = navController) }
+        bottomBar = { BottomNavigationBar(navController = navController) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showDialog = true },
+                containerColor = DarkPurple
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Add Book",
+                    tint = Color.White
+                )
+            }
+        }
     ) { innerPadding ->
         Column(
             modifier = Modifier
@@ -70,13 +99,12 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                 items(rows.size) { rowIndex ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .padding(10.dp, 0.dp)
                     ) {
                         val rowItems = rows[rowIndex]
-                        Log.d("ReadScreen", "Making new rows again")
                         for (book in rowItems) {
-                            Log.d("ReadScreen", "Making new books again")
                             val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
                             val isbn13 = isbn13Identifier?.identifier
                             val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
@@ -84,7 +112,8 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                             LazyLoadingImage(
                                 imageUrl = url.toString(),
                                 contentDescription = book.volumeInfo.title,
-                                modifier = Modifier.height(150.dp)
+                                modifier = Modifier
+                                    .height(150.dp)
                                     .width(120.dp)
                                     .clickable { navController.navigate("readDetails/${isbn13}") }
                                     .padding(10.dp, 0.dp),
@@ -92,22 +121,79 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                             )
                         }
                         if (rowItems.size < 3) {
-                            // Dodajte prazne kutije ako je manje od tri stavke u redu
                             for (i in 1..(3 - rowItems.size)) {
                                 Spacer(modifier = Modifier.weight(1f))
                             }
                         }
                     }
                     Box(
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
                             .background(color = DarkPurple)
                             .height(30.dp),
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                 }
-                Log.d("ReadScreen", "Count ${booksRead.size}")
             }
 
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    title = {
+                        Text(
+                            text = "Add books via:",
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    },
+                    buttons = {
+                        Column(
+                            modifier = Modifier.width(250.dp)
+                                .padding(top = 25.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Button(
+                                onClick = {
+                                    showDialog = false
+                                    navController.navigate("search_screen")
+                                },
+                                modifier = Modifier.width(200.dp)
+                                    .height(65.dp)
+                                    .padding(bottom = 15.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = LightPurple
+                                )
+                            ) {
+                                Text("Search", modifier = Modifier.padding(end = 9.dp), fontSize = 17.sp)
+                                Icon(imageVector = Icons.Default.Search, contentDescription = "Search Icon")
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            Button(
+                                onClick = {
+                                    showDialog = false
+                                    navController.navigate("barcode_screen")
+                                },
+                                modifier = Modifier.width(200.dp)
+                                    .height(70.dp)
+                                    .padding(bottom = 20.dp),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = LightPurple
+                                )
+                            ) {
+                                Text("Barcode", modifier = Modifier.padding(end = 12.dp), fontSize = 17.sp)
+                                Icon(
+                                    painter = painterResource(context.resources.getIdentifier("camera", "drawable", context.packageName)),
+                                    contentDescription = "Camera Icon",
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                        }
+                    }
+                )
+            }
         }
     }
 }
+
