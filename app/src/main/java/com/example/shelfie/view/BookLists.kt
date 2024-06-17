@@ -27,6 +27,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,13 +41,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.compose.rememberImagePainter
+import com.example.shelfie.R
 import com.example.shelfie.model.BookItem
+import com.example.shelfie.ui.theme.LightPurple
 import com.example.shelfie.viewmodel.BooksViewModel
 @Composable
 fun BookLists(navController: NavController, viewModel: BooksViewModel, book: BookItem) {
@@ -60,7 +64,9 @@ fun BookLists(navController: NavController, viewModel: BooksViewModel, book: Boo
         if (book.volumeInfo.imageLinks?.thumbnail != null) {
             val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
             val isbn13 = isbn13Identifier?.identifier
-            Log.d("BookDetailsScreen", "ISBN-13: $isbn13")
+            Log.d("BookDetailsScreen", "ISBN-13: ${book.volumeInfo.title}")
+            Log.d("BookDetailsScreen", "ISBN-13: ${book.volumeInfo.authors}")
+            Log.d("BookDetailsScreen", "ISBN-13: ${book.volumeInfo.imageLinks}")
             val url = "https" + book.volumeInfo.imageLinks.thumbnail.substring(4)
             LazyLoadingImage(
                 imageUrl = url,
@@ -71,6 +77,24 @@ fun BookLists(navController: NavController, viewModel: BooksViewModel, book: Boo
                     .height(200.dp),
                 contentScale = ContentScale.Crop
             )
+
+        }
+        else{
+            val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
+            val isbn13 = isbn13Identifier?.identifier
+            val url = "https"
+            Box(modifier = Modifier.width(150.dp)
+                .height(200.dp),){
+                Image(
+                    painter = painterResource(id = R.drawable.cover),
+                    modifier = Modifier
+                        .width(180.dp)
+                        .clickable { navController.navigate("bookDetails/$isbn13") }
+                        .height(200.dp),
+                    contentDescription = book.volumeInfo.title,
+                )
+            }
+
         }
         Column (
             modifier = Modifier
@@ -94,7 +118,10 @@ fun BookLists(navController: NavController, viewModel: BooksViewModel, book: Boo
                 modifier = Modifier.clickable { navController.navigate("bookDetails/${isbn13}") }
             )
             Box {
-                Button(onClick = { menuExpanded = true }) {
+                Button(onClick = { menuExpanded = true },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = LightPurple
+                    )) {
                     Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Add Book to shelf")

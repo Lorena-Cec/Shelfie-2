@@ -28,10 +28,20 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.*
@@ -45,22 +55,30 @@ import com.example.shelfie.R
 import com.example.shelfie.model.BookItem
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
+import com.example.shelfie.ui.theme.LigtherPurple
 import com.google.firebase.firestore.FirebaseFirestore
 import com.example.shelfie.viewmodel.BooksViewModel
 
 @Composable
-fun ProfileScreen(navController: NavController, viewModel: BooksViewModel) {
+fun ProfileScreen(navController: NavController, viewModel: BooksViewModel, onLogout: () -> Unit) {
+    var quoteText by remember { mutableStateOf("") }
+    var bookTitle by remember { mutableStateOf("") }
+    var pageNumber by remember { mutableStateOf("") }
+    var showAddDialog by remember { mutableStateOf(false) }
+
     val favorites by viewModel.favorites.collectAsState()
+    val favoriteQuotes by viewModel.favoriteQuotes.collectAsState()
+
     LaunchedEffect(Unit) {
-        viewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
+        viewModel.fetchFavorites()
+        viewModel.fetchFavoriteQuotes()
     }
         Scaffold(
             bottomBar = { BottomNavigationBar(navController = navController) }
         ) { innerPadding ->
             Column(
                 modifier = Modifier
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState()),
+                    .padding(innerPadding),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -71,18 +89,34 @@ fun ProfileScreen(navController: NavController, viewModel: BooksViewModel) {
                         .height(80.dp),
                     contentAlignment = Alignment.TopStart
                 ){
-                    Text(
-                        text = "My Profile",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 30.dp, top = 25.dp),
-                        textAlign = TextAlign.Start,
-                        fontSize = 24.sp,
-                        color = Color.White
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "My Profile",
+                            modifier = Modifier
+                                .padding(start = 30.dp),
+                            textAlign = TextAlign.Start,
+                            fontSize = 24.sp,
+                            color = Color.White
+                        )
+                        Button(
+                            onClick = {
+                                onLogout()
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LightPurple
+                            ),
+                            modifier = Modifier.padding(end = 16.dp)
+                        ) {
+                            Text("Logout")
+                        }
+                    }
                 }
 
-                ProfileImage(viewModel)
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
                     text = "My favorite books",
@@ -113,9 +147,60 @@ fun ProfileScreen(navController: NavController, viewModel: BooksViewModel) {
                         .height(30.dp),
                 ) {}
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Text(
+                    text = "My favorite quotes",
+                    modifier = Modifier.padding(8.dp),
+                    textAlign = TextAlign.Center,
+                    fontSize = 20.sp,
+                )
+                LazyColumn(
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp)
+                ) {
+                    items(favoriteQuotes) { quoteMap ->
+                        val quote = quoteMap["quote"] ?: ""
+                        val bookTitle = quoteMap["bookTitle"] ?: ""
+                        val pageNumber = quoteMap["pageNumber"] ?: ""
+
+                        QuoteItem(
+                            quote = quote,
+                            bookTitle = bookTitle,
+                            pageNumber = pageNumber,
+                            navController = navController
+                        ) {
+                            viewModel.removeQuote(quote, bookTitle, pageNumber)
+                        }
+                    }
+
+                    item {
+                        AddQuoteButton(onClick = { showAddDialog = true })
+                    }
+                }
+
             }
         }
+    if (showAddDialog) {
+        AddQuoteDialog(
+            onDismiss = { showAddDialog = false },
+            onSave = {
+                if (quoteText.isNotBlank()) {
+                    viewModel.addFavoriteQuote(quoteText, bookTitle, pageNumber)
+                    showAddDialog = false
+                    quoteText = ""
+                    bookTitle = ""
+                    pageNumber = ""
+                }
+            },
+            quoteText = quoteText,
+            onQuoteTextChanged = { quoteText = it },
+            bookTitle = bookTitle,
+            onBookTitleChanged = { bookTitle = it },
+            pageNumber = pageNumber,
+            onPageNumberChanged = { pageNumber = it }
+        )
+    }
     }
 
 
@@ -141,48 +226,142 @@ fun BookItemSurface(book: BookItem, navController: NavController) {
             contentScale = ContentScale.Crop
         )
     }
-    Log.d("ProfileScreen", "Title: ${book.volumeInfo.title}")
 }
 
-    @Composable
-    fun ProfileImage(viewModel: BooksViewModel){
-        val imageUri = rememberSaveable { mutableStateOf("") }
-        val painter = rememberImagePainter(
-            if (imageUri.value.isEmpty())
-                R.drawable.profile
-            else
-                imageUri.value
-        )
-        val launcher = rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()
-        ) {uri: Uri? ->
-            uri?.let{
-                imageUri.value = it.toString()
-                viewModel.uploadImage(it)
-            }
-        }
+@Composable
+fun QuoteItem(quote: String, bookTitle: String, pageNumber: String, navController: NavController, onRemoveQuote: () -> Unit) {
+    var showDialog by remember { mutableStateOf(false) }
 
+    if (showDialog) {
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            title = { Text(text = "Remove quote?") },
+            confirmButton = {
+                Button(onClick = {
+                    onRemoveQuote()
+                    navController.navigate("profile_screen")
+                    showDialog = false
+                }, colors = ButtonDefaults.buttonColors(
+                    containerColor = LightPurple
+                )) {
+                    Text("Remove")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showDialog = false }, colors = ButtonDefaults.buttonColors(
+                    containerColor = LightPurple
+                )) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp)
+            .background(color = LigtherPurple, shape = RoundedCornerShape(10.dp))
+            .clickable { showDialog = true },
+        contentAlignment = Alignment.Center
+    ) {
         Column(
-            modifier = Modifier
-                .padding(end = 30.dp)
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(16.dp)
         ) {
-            Card(
-                shape = CircleShape,
-                modifier = Modifier
-                    .size(120.dp)
-                    .offset(y = (-40).dp)
-                    .align(Alignment.End),
-            ) {
-                Image(
-                    painter = painter,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .wrapContentSize()
-                        .size(120.dp)
-                        .clickable { launcher.launch("image/*") },
-                    contentScale = ContentScale.Crop
+            Text(
+                text = "\"$quote\"",
+                textAlign = TextAlign.Center,
+                fontSize = 18.sp,
+                color = Color.Black
+            )
+            if(bookTitle.isNotBlank() && pageNumber.isNotBlank()) {
+                Text(
+                    text = "- $bookTitle, page $pageNumber",
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            }
+            else if(bookTitle.isNotBlank()){
+                Text(
+                    text = "- $bookTitle",
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    color = Color.White
+                )
+            }
+            else if(pageNumber.isNotBlank()){
+                Text(
+                    text = "- page $pageNumber",
+                    textAlign = TextAlign.Center,
+                    fontSize = 14.sp,
+                    color = Color.White
                 )
             }
         }
     }
+}
+
+@Composable
+fun AddQuoteButton(onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        IconButton(onClick = onClick) {
+            Icon(Icons.Default.Add, contentDescription = "Add Quote")
+        }
+    }
+}
+
+@Composable
+fun AddQuoteDialog(
+    onDismiss: () -> Unit,
+    onSave: () -> Unit,
+    quoteText: String,
+    onQuoteTextChanged: (String) -> Unit,
+    bookTitle: String,
+    onBookTitleChanged: (String) -> Unit,
+    pageNumber: String,
+    onPageNumberChanged: (String) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Quote") },
+        text = {
+            Column {
+                TextField(
+                    value = quoteText,
+                    onValueChange = onQuoteTextChanged,
+                    label = { Text("Quote") }
+                )
+                TextField(
+                    value = bookTitle,
+                    onValueChange = onBookTitleChanged,
+                    label = { Text("Book") }
+                )
+                TextField(
+                    value = pageNumber,
+                    onValueChange = onPageNumberChanged,
+                    label = { Text("Page") }
+                )
+            }
+        },
+        confirmButton = {
+            Button(onClick = onSave, colors = ButtonDefaults.buttonColors(
+                containerColor = LightPurple
+            )) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss, colors = ButtonDefaults.buttonColors(
+                containerColor = LightPurple
+            )) {
+                Text("Cancel")
+            }
+        }
+    )
+}

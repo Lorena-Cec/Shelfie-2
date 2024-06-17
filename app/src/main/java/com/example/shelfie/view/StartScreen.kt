@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -46,25 +47,14 @@ fun StartScreen(navController: NavController) {
     ){
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ){
             Image(
-                painter = painterResource(id = R.drawable.logo),
+                painter = painterResource(id = R.drawable.logodark),
                 contentDescription = "logo",
-                modifier = Modifier.size(250.dp),
-                contentScale = ContentScale.Crop
+                modifier = Modifier.size(300.dp).padding(bottom = 90.dp)
             )
-            Spacer(modifier = Modifier.height(40.dp))
-            Button(onClick = { /*TODO: Signing in with Google */
-                navController.navigate("login_screen") },
-                modifier = Modifier.size(width = 300.dp, height = 60.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
-                border = BorderStroke(2.dp, DarkPurple),
-                shape = RoundedCornerShape(50)
-                ) {
-                Text(text = "Continue with Google", color = DarkPurple, fontSize = 20.sp)
-            }
-            Spacer(modifier = Modifier.height(40.dp))
+
+            Spacer(modifier = Modifier.height(30.dp))
             Button(onClick = { /*TODO: Register*/
                 navController.navigate("register_screen")},
                 colors = ButtonDefaults.buttonColors(containerColor = DarkPurple),

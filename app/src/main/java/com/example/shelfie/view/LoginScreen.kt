@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,10 +43,10 @@ import com.google.firebase.auth.FirebaseAuth
 @Composable
 fun LoginScreen(navController: NavController) {
     var email by remember {
-        mutableStateOf("Email/Username")
+        mutableStateOf("")
     }
     var password by remember {
-        mutableStateOf("Password")
+        mutableStateOf("")
     }
     val context = LocalContext.current
     Box(
@@ -65,11 +66,14 @@ fun LoginScreen(navController: NavController) {
             TextField(
                 value = email,
                 onValueChange = { email = it },
+                label = { Text("Email") }
                 )
             Spacer(modifier = Modifier.height(40.dp))
             TextField(
                 value = password,
                 onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation()
             )
             Spacer(modifier = Modifier.height(40.dp))
             Button(onClick = { /*TODO: Send data to Firebase and go to HomeScreen*/

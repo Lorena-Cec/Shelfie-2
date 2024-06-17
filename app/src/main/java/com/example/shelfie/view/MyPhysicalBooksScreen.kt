@@ -57,7 +57,7 @@ fun MyPhysicalBooksScreen(navController: NavController, booksViewModel: BooksVie
     val myPhysicalBooks by booksViewModel.myPhysicalBooks.collectAsState()
 
     LaunchedEffect(Unit) {
-        booksViewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
+        booksViewModel.fetchBooks()
     }
 
     var expanded by remember { mutableStateOf(false) }

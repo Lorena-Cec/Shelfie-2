@@ -56,7 +56,7 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
     val booksRead by booksViewModel.booksRead.collectAsState()
 
     LaunchedEffect(Unit) {
-        booksViewModel.fetchBooks("L7aX4ZDOL9bxiBpIla1mooU9Qwu1")
+        booksViewModel.fetchBooks()
     }
 
     var expanded by remember { mutableStateOf(false) }

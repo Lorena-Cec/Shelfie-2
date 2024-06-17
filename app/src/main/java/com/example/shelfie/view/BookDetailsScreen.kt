@@ -121,6 +121,7 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                                 .height(220.dp),
                             contentScale = ContentScale.Crop
                         )
+
                     }
                 }
 

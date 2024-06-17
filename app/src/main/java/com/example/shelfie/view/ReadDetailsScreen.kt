@@ -11,11 +11,16 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.AlertDialog
 import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -29,10 +34,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,10 +55,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.example.shelfie.R
 import com.example.shelfie.api.RetrofitClient
 import com.example.shelfie.model.BookSearchResponse
 import com.example.shelfie.ui.theme.DarkPurple
@@ -66,6 +77,7 @@ import kotlinx.coroutines.withContext
 fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: BooksViewModel)  {
     Log.d("ReadDetailsScreen", "ISBN-13: $isbn13")
     var bookResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
+    val openDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
     val favorites by viewModel.favorites.collectAsState()
     LaunchedEffect(Unit) {
@@ -97,9 +109,9 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                     },
-                    actions = {
+                    actions = {/*
                         val isFavorite = favorites.any { it.volumeInfo.title == book.volumeInfo.title }
-                        Log.d("ReadDetailsScreen", "Is favorite: $isFavorite")
+                        Log.d("ReadDetailsScreen", "Is favorite: $favorites")
                         IconButton(onClick = {
                             if (isFavorite) {
                                 viewModel.removeFromFavorites(book)
@@ -114,6 +126,15 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                                 contentDescription = "Add to Favorites",
                                 tint = Color.White
                             )
+                        }*/
+                        IconButton(onClick = {
+                            openDialog.value = true
+                        }) {
+                            Icon(
+                                imageVector = Icons.Default.Clear,
+                                contentDescription = "Remove from Category",
+                                tint = Color.White
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = DarkPurple)
@@ -123,7 +144,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp,120.dp,10.dp,10.dp)
+                    .padding(10.dp, 120.dp, 10.dp, 10.dp)
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -134,17 +155,51 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                     Box(
                         modifier = Modifier
                             .width(200.dp)
-                            .padding(0.dp,0.dp,0.dp,30.dp)
+                            .padding(0.dp, 0.dp, 0.dp, 30.dp)
                             .height(270.dp)
                             .background(LightPurple, shape = RoundedCornerShape(5.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        LazyLoadingImage(
-                            imageUrl = url.toString(),
+                        AsyncImage(
+                            model = url.toString(),
                             contentDescription = book.volumeInfo.title,
-                            modifier = Modifier.width(150.dp)
+                            modifier = Modifier
+                                .width(150.dp)
                                 .height(220.dp),
-                            contentScale = ContentScale.Crop
+                            contentScale = ContentScale.Crop,
+                            error = painterResource(id = R.drawable.cover),
+                        )
+                    }
+                }
+
+                Card(
+                    shape = CircleShape,
+                    colors = CardColors(
+                        containerColor = DarkPurple,
+                        contentColor = Color.White,
+                        disabledContentColor = Color.White,
+                        disabledContainerColor = LightPurple),
+                    modifier = Modifier
+                        .offset(x = 90.dp,y = (-60).dp)
+                        .padding(5.dp)
+                        .align(Alignment.CenterHorizontally),
+                ){
+                    val isFavorite = favorites.any { it.volumeInfo.title == book.volumeInfo.title }
+                    Log.d("ReadDetailsScreen", "Is favorite: $favorites")
+                    IconButton(onClick = {
+                        if (isFavorite) {
+                            viewModel.removeFromFavorites(book)
+                            Toast.makeText(context, "Removed from Favorites", Toast.LENGTH_SHORT).show()
+                        } else {
+                            viewModel.addToFavorites(book)
+                            Toast.makeText(context, "Added to Favorites", Toast.LENGTH_SHORT).show()
+                        }
+                    }, ){
+                        Icon(
+                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Add to Favorites",
+                            tint = Color.White,
+                            modifier = Modifier.size(30.dp)
                         )
                     }
                 }
@@ -154,7 +209,6 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 2.dp)
                 )
 
                 val authorsText = if (book.volumeInfo.authors != null && book.volumeInfo.authors.isNotEmpty()) {
@@ -209,10 +263,8 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                         }
                         DropdownMenuItem(onClick = {
                             menuExpanded = false
-                            viewModel.addBookToCategory(book, "Read")
-                            Toast.makeText(context, "Added book to Read", Toast.LENGTH_SHORT).show()
                         }) {
-                            Text("Read")
+                            Text("Read", color = LightPurple)
                         }
                         DropdownMenuItem(onClick = {
                             menuExpanded = false
@@ -232,6 +284,32 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                     }
                 }
                 Spacer(modifier = Modifier.height(80.dp))
+            }
+            if (openDialog.value) {
+                AlertDialog(
+                    onDismissRequest = { openDialog.value = false },
+                    title = { Text("Remove from Category") },
+                    text = { Text("Are you sure you want to remove this book from this category?") },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                Log.d("ViewModel","$book")
+                                viewModel.removeBookFromCategory(book, "Read")
+                                openDialog.value = false
+                                Toast.makeText(context, "Removed from Category", Toast.LENGTH_SHORT).show()
+                            }
+                        ) {
+                            Text("Remove")
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { openDialog.value = false }
+                        ) {
+                            Text("Cancel")
+                        }
+                    }
+                )
             }
         }
     }

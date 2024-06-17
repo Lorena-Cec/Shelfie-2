@@ -39,9 +39,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.tasks.await
 
 class BooksViewModel : ViewModel() {
-    private val api = RetrofitClient.apiService
     var books: List<VolumeInfo> by mutableStateOf(emptyList())
-    var errorMessage: String by mutableStateOf("")
     private val _bookResponse = MutableLiveData<BookSearchResponse>()
 
     private val _currentlyReading = MutableStateFlow<List<BookItem>>(emptyList())
@@ -70,7 +68,7 @@ class BooksViewModel : ViewModel() {
                 val bookResponse = response.body()
                 val filteredBooks = bookResponse?.items?.filter { book ->
                     val industryIdentifiers = book.volumeInfo.industryIdentifiers
-                    industryIdentifiers?.any { it.type == "ISBN_13" } == true
+                    industryIdentifiers.any { it.type == "ISBN_13" }
                 }
                 _bookResponse.value = bookResponse?.copy(items = filteredBooks ?: emptyList())
             } else {
@@ -103,14 +101,17 @@ class BooksViewModel : ViewModel() {
         }
     }
 
-    fun fetchBooks(userId: String) {
-        viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                fetchBooksFromFirestore(userId) { currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList ->
-                    _currentlyReading.value = currentlyReadingBooks
-                    _booksRead.value = readBooks
-                    _booksToRead.value = toBeReadBooks
-                    _myPhysicalBooks.value = myPhysicalBooksList
+    fun fetchBooks() {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                withContext(Dispatchers.IO) {
+                    fetchBooksFromFirestore(user.uid) { currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList ->
+                        _currentlyReading.value = currentlyReadingBooks
+                        _booksRead.value = readBooks
+                        _booksToRead.value = toBeReadBooks
+                        _myPhysicalBooks.value = myPhysicalBooksList
+                    }
                 }
             }
         }
@@ -143,9 +144,6 @@ class BooksViewModel : ViewModel() {
         )
     }
 
-    // Dodajte ostale kategorije knjiga ako su potrebne
-
-
     fun addBookToCategory(book: BookItem, category: String) {
         when (category) {
             "Read" -> {
@@ -168,41 +166,70 @@ class BooksViewModel : ViewModel() {
         }
     }
 
-    fun removeBookFromCategory(book: BookItem, category: String) {
-        when (category) {
-            "Read" -> {
-                val updatedRead = _booksRead.value.filter { it.volumeInfo.title != book.volumeInfo.title }
-                _booksRead.value = updatedRead
-                updateRemoveFirestore(category, updatedRead)
+        fun removeBookFromCategory(book: BookItem, category: String) {
+            when (category) {
+                "Read" -> {
+                    _booksRead.value -= book
+                    updateFirestoreCategoryRemove(category, book)
+                }
+                "ToBeRead" -> {
+                    _booksToRead.value -= book
+                    updateFirestoreCategoryRemove(category, book)
+                }
+                "MyPhysicalBooks" -> {
+                    _myPhysicalBooks.value -= book
+                    updateFirestoreCategoryRemove(category, book)
+                }
+                "CurrentlyReading" -> {
+                    _currentlyReading.value -= book
+                    updateFirestoreCategoryRemove(category, book)
+                }
+                else -> throw IllegalArgumentException("Unsupported category: $category")
             }
-            "ToBeRead" -> {
-                val updatedRead = _booksToRead.value.filter { it.volumeInfo.title != book.volumeInfo.title }
-                _booksToRead.value = updatedRead
-                updateRemoveFirestore(category, updatedRead)
-            }
-            "MyPhysicalBooks" -> {
-                _myPhysicalBooks.value += book
-                updateFirestoreCategory(category, book)
-            }
-            "CurrentlyReading" -> {
-                _currentlyReading.value += book
-                updateFirestoreCategory(category, book)
-            }
-            else -> throw IllegalArgumentException("Unsupported category: $category")
         }
-    }
 
-    private fun updateRemoveFirestore(category: String, updatedFavorites: List<BookItem>) {
+        private fun updateRemoveFirestore(category: String, updatedBooks: List<BookItem>) {
+            val currentUser = Firebase.auth.currentUser
+            currentUser?.let { user ->
+                val userRef = db.collection("users").document(user.uid)
+                userRef.update(category, updatedBooks.map { it.toMap() })
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Category updated successfully in Firestore")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error updating category in Firestore", e)
+                    }
+            }
+        }
+
+    private fun updateFirestoreCategoryRemove(category: String, book: BookItem?) {
         val currentUser = Firebase.auth.currentUser
-        currentUser?.let { user ->
-            val userRef = db.collection("users").document(user.uid)
-            userRef.update(category, updatedFavorites.map { it.toMap() })
-                .addOnSuccessListener {
-                    Log.d(TAG, "Category updated successfully in Firestore")
+        currentUser?.let {
+            val userRef = db.collection("users").document(it.uid)
+            userRef.get().addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val currentBooks = document.get(category) as? List<Map<String, Any>> ?: emptyList()
+                    val updatedBooks = currentBooks.toMutableList()
+
+                    if (book != null) {
+                        updatedBooks.removeIf { map ->
+                            val title = (map["volumeInfo"] as? Map<*, *>)?.get("title") as? String
+                            Log.d(TAG, "Books $title")
+                            title == book.volumeInfo.title
+                        }
+                    }
+
+                    userRef.update(category, updatedBooks)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "DocumentSnapshot successfully updated!")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.w(TAG, "Error updating document", e)
+                        }
                 }
-                .addOnFailureListener { e ->
-                    Log.e(TAG, "Error updating category in Firestore", e)
-                }
+            }.addOnFailureListener { e ->
+                Log.w(TAG, "Error getting document", e)
+            }
         }
     }
 
@@ -230,6 +257,79 @@ class BooksViewModel : ViewModel() {
         }
     }
 
+    private val _favoriteQuotes = MutableStateFlow<List<Map<String, String>>>(emptyList())
+    val favoriteQuotes: StateFlow<List<Map<String, String>>> get() = _favoriteQuotes
+
+    fun fetchFavoriteQuotes() {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.get().addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val quotes = document.get("favoriteQuotes") as? List<Map<String, String>> ?: emptyList()
+                    _favoriteQuotes.value = quotes
+                }
+            }.addOnFailureListener { e ->
+                Log.e(TAG, "Error fetching favorite quotes", e)
+            }
+        }
+    }
+
+    fun addFavoriteQuote(quote: String, bookTitle: String, pageNumber: String) {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.get().addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val currentQuotes = document.get("favoriteQuotes") as? List<Map<String, String>> ?: emptyList()
+                    val newQuote = mapOf(
+                        "quote" to quote,
+                        "bookTitle" to bookTitle,
+                        "pageNumber" to pageNumber
+                    )
+                    val updatedQuotes = currentQuotes.toMutableList().apply { add(newQuote) }
+                    userRef.update("favoriteQuotes", updatedQuotes)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "Favorite quotes updated successfully!")
+                            fetchFavoriteQuotes() // Opcionalno: osvježi listu nakon dodavanja citata
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Error updating favorite quotes", e)
+                        }
+                }
+            }.addOnFailureListener { e ->
+                Log.e(TAG, "Error fetching user document", e)
+            }
+        }
+    }
+
+    fun removeQuote(quote: String, bookTitle: String, pageNumber: String) {
+        Log.d("","Usao")
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            val userRef = db.collection("users").document(user.uid)
+            userRef.get().addOnSuccessListener { document ->
+                if (document.exists()) {
+                    val quotes = document.get("favoriteQuotes") as? MutableList<Map<String, String>>
+                    quotes?.let {
+                        val quoteToRemove = mapOf(
+                            "quote" to quote,
+                            "bookTitle" to bookTitle,
+                            "pageNumber" to pageNumber
+                        )
+                        it.remove(quoteToRemove)
+                        userRef.update("favoriteQuotes", it)
+                            .addOnSuccessListener {
+                                Log.d(TAG, "Quote successfully removed!")
+                            }
+                            .addOnFailureListener { e ->
+                                Log.w(TAG, "Error removing quote", e)
+                            }
+                    }
+                }
+            }
+        }
+    }
 
 
     fun addToFavorites(book: BookItem) {
@@ -287,46 +387,6 @@ class BooksViewModel : ViewModel() {
         }
     }
 
-    fun uploadImage(uri: Uri) {
-        val currentUser = Firebase.auth.currentUser
-        currentUser?.let {
-            val userRef = db.collection("users").document(it.uid)
-            userRef.get().addOnSuccessListener { document ->
-                if (document.exists()) {
-                    userRef.update("ProfilePicture", uri)
-                        .addOnSuccessListener {
-                            Log.d(TAG, "DocumentSnapshot successfully updated!")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.w(TAG, "Error updating document", e)
-                        }
-                }
-            }
-        }
-    }
-/*
-    fun fetchImage(userId: String, uri: (Uri) -> Unit) {
-        val db = FirebaseFirestore.getInstance()
-        try {
-            val document = db.collection("users").document(userId).get().await()
-            if (document.exists()) {
-                val currentlyReading = document.get("CurrentlyReading") as? List<Map<String, Any>> ?: emptyList()
-                val read = document.get("Read") as? List<Map<String, Any>> ?: emptyList()
-                val toBeRead = document.get("ToBeRead") as? List<Map<String, Any>> ?: emptyList()
-                val myPhysicalBooks = document.get("MyPhysicalBooks") as? List<Map<String, Any>> ?: emptyList()
-
-                val currentlyReadingBooks = currentlyReading.map { it.toBookItem() }
-                val readBooks = read.map { it.toBookItem() }
-                val toBeReadBooks = toBeRead.map { it.toBookItem() }
-                val myPhysicalBooksList = myPhysicalBooks.map { it.toBookItem() }
-
-                onBooksFetched(currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList)
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-*/
     private fun BookItem.toMap(): Map<String, Any> {
         val volumeInfoMap = mutableMapOf<String, Any>(
             "title" to volumeInfo.title,

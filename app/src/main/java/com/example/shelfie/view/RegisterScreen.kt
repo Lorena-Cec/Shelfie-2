@@ -16,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -43,16 +45,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 @Composable
 fun RegisterScreen(navController: NavController) {
     var username by remember {
-        mutableStateOf("Username")
+        mutableStateOf("")
     }
     var email by remember {
-        mutableStateOf("Email")
+        mutableStateOf("")
     }
     var password by remember {
-        mutableStateOf("Password")
+        mutableStateOf("")
     }
     var passwordConfirm by remember {
-        mutableStateOf("Confirm Password")
+        mutableStateOf("")
     }
     val context = LocalContext.current
     Box(
@@ -72,21 +74,27 @@ fun RegisterScreen(navController: NavController) {
             TextField(
                 value = username,
                 onValueChange = { username = it },
+                label = { Text("Username") }
             )
             Spacer(modifier = Modifier.height(40.dp))
             TextField(
                 value = email,
                 onValueChange = { email = it },
+                label = { Text("Email") }
             )
             Spacer(modifier = Modifier.height(40.dp))
             TextField(
                 value = password,
                 onValueChange = { password = it },
+                label = { Text("Password") },
+                visualTransformation = PasswordVisualTransformation()
             )
             Spacer(modifier = Modifier.height(40.dp))
             TextField(
                 value = passwordConfirm,
                 onValueChange = { passwordConfirm = it },
+                label = { Text("Confirm password") },
+                visualTransformation = PasswordVisualTransformation()
             )
             Spacer(modifier = Modifier.height(40.dp))
             Button(onClick = { /*TODO: Send data to Firebase and go to HomeScreen*/

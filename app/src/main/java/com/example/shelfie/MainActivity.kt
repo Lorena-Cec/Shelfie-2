@@ -63,7 +63,10 @@ class MainActivity : ComponentActivity() {
                         SearchScreen(navController = navController, viewModel = booksViewModel)
                     }
                     composable("profile_screen") {
-                        ProfileScreen(navController = navController, viewModel = booksViewModel)
+                        ProfileScreen(navController = navController, viewModel = booksViewModel, onLogout = {
+                            FirebaseAuth.getInstance().signOut()
+                            navController.navigate("start_screen")
+                        })
                     }
                     composable("read_screen") {
                         ReadScreen(navController = navController)
