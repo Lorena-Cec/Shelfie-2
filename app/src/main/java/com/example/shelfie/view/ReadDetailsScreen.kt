@@ -3,10 +3,13 @@ package com.example.shelfie.view
 import android.annotation.SuppressLint
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -66,7 +69,8 @@ import com.example.shelfie.api.RetrofitClient
 import com.example.shelfie.model.BookSearchResponse
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
-import com.example.shelfie.viewmodel.BooksViewModel
+import com.example.shelfie.viewmodel.BookFirebaseViewModel
+import com.example.shelfie.viewmodel.FavoritesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -74,12 +78,15 @@ import kotlinx.coroutines.withContext
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: BooksViewModel)  {
-    Log.d("ReadDetailsScreen", "ISBN-13: $isbn13")
+fun ReadDetailsScreen(navController: NavController, isbn13: String, category: String)  {
+
     var bookResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
     val openDialog = remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val viewModel: FavoritesViewModel = viewModel()
     val favorites by viewModel.favorites.collectAsState()
+    val booksViewModel: BookFirebaseViewModel = viewModel()
+
     LaunchedEffect(Unit) {
         viewModel.fetchFavorites()
         val response = withContext(Dispatchers.IO) {
@@ -89,10 +96,9 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                 maxResults = 1,
             )
         }
-        Log.d("BookDetailsScreen", "Response body: ${response.body()}")
+
         if (response.isSuccessful) {
             bookResponse = response.body()
-            Log.d("BookDetailsScreen", "ISBN-13: $bookResponse")
         }
         else{
             Log.d("BookDetailsScreen", "Fail ")
@@ -105,35 +111,16 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                     title = { Text("Book Details", color = Color.White, fontSize = 20.sp) },
                     modifier = Modifier.fillMaxWidth(),
                     navigationIcon = {
-                        IconButton(onClick = { navController.navigate("read_screen") }) {
+                        IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = Color.White)
                         }
                     },
-                    actions = {/*
-                        val isFavorite = favorites.any { it.volumeInfo.title == book.volumeInfo.title }
-                        Log.d("ReadDetailsScreen", "Is favorite: $favorites")
-                        IconButton(onClick = {
-                            if (isFavorite) {
-                                viewModel.removeFromFavorites(book)
-                                Toast.makeText(context, "Removed from Favorites", Toast.LENGTH_SHORT).show()
-                            } else {
-                                viewModel.addToFavorites(book)
-                                Toast.makeText(context, "Added to Favorites", Toast.LENGTH_SHORT).show()
-                            }
-                        }) {
-                            Icon(
-                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                                contentDescription = "Add to Favorites",
-                                tint = Color.White
-                            )
-                        }*/
-                        IconButton(onClick = {
-                            openDialog.value = true
-                        }) {
-                            Icon(
-                                imageVector = Icons.Default.Clear,
-                                contentDescription = "Remove from Category",
-                                tint = Color.White
+                    actions = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Remove",
+                                color = Color.White,
+                                modifier = Modifier.padding(end = 20.dp).clickable { openDialog.value = true }
                             )
                         }
                     },
@@ -150,60 +137,85 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 if (book.volumeInfo.imageLinks != null) {
-                    val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
-                    url.insert(4, "s")
                     Box(
                         modifier = Modifier
                             .width(200.dp)
-                            .padding(0.dp, 0.dp, 0.dp, 30.dp)
+                            .padding(0.dp,0.dp,0.dp,30.dp)
                             .height(270.dp)
                             .background(LightPurple, shape = RoundedCornerShape(5.dp)),
                         contentAlignment = Alignment.Center
                     ) {
-                        AsyncImage(
-                            model = url.toString(),
+                        val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
+                        url.insert(4, "s")
+                        LazyLoadingImage(
+                            imageUrl = url.toString(),
                             contentDescription = book.volumeInfo.title,
                             modifier = Modifier
                                 .width(150.dp)
-                                .height(220.dp),
-                            contentScale = ContentScale.Crop,
-                            error = painterResource(id = R.drawable.cover),
+                                .height(200.dp),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+
+                }
+                else{
+                    val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+                    val isbn13 = isbn13Identifier?.identifier
+                    Box(modifier = Modifier.width(250.dp)
+                        .height(250.dp),){
+                        Image(
+                            painter = painterResource(id = R.drawable.cover),//
+                            modifier = Modifier
+                                .width(250.dp)
+                                .height(250.dp),
+                            contentDescription = book.volumeInfo.title,
                         )
                     }
                 }
-
-                Card(
-                    shape = CircleShape,
-                    colors = CardColors(
-                        containerColor = DarkPurple,
-                        contentColor = Color.White,
-                        disabledContentColor = Color.White,
-                        disabledContainerColor = LightPurple),
-                    modifier = Modifier
-                        .offset(x = 90.dp,y = (-60).dp)
-                        .padding(5.dp)
-                        .align(Alignment.CenterHorizontally),
-                ){
-                    val isFavorite = favorites.any { it.volumeInfo.title == book.volumeInfo.title }
-                    Log.d("ReadDetailsScreen", "Is favorite: $favorites")
-                    IconButton(onClick = {
-                        if (isFavorite) {
-                            viewModel.removeFromFavorites(book)
-                            Toast.makeText(context, "Removed from Favorites", Toast.LENGTH_SHORT).show()
-                        } else {
-                            viewModel.addToFavorites(book)
-                            Toast.makeText(context, "Added to Favorites", Toast.LENGTH_SHORT).show()
+                if(category=="Read") {
+                    Card(
+                        shape = CircleShape,
+                        colors = CardColors(
+                            containerColor = DarkPurple,
+                            contentColor = Color.White,
+                            disabledContentColor = Color.White,
+                            disabledContainerColor = LightPurple
+                        ),
+                        modifier = Modifier
+                            .offset(x = 90.dp, y = (-60).dp)
+                            .padding(5.dp)
+                            .align(Alignment.CenterHorizontally),
+                    ) {
+                        val isFavorite =
+                            favorites.any { it.volumeInfo.title == book.volumeInfo.title }
+                        IconButton(
+                            onClick = {
+                                if (isFavorite) {
+                                    viewModel.removeFromFavorites(book)
+                                    Toast.makeText(
+                                        context,
+                                        "Removed from Favorites",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                } else {
+                                    viewModel.addToFavorites(book)
+                                    Toast.makeText(
+                                        context,
+                                        "Added to Favorites",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            },
+                        ) {
+                            Icon(
+                                imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                                contentDescription = "Add to Favorites",
+                                tint = Color.White,
+                                modifier = Modifier.size(30.dp)
+                            )
                         }
-                    }, ){
-                        Icon(
-                            imageVector = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                            contentDescription = "Add to Favorites",
-                            tint = Color.White,
-                            modifier = Modifier.size(30.dp)
-                        )
                     }
                 }
-
                 Text(
                     text = book.volumeInfo.title,
                     fontWeight = FontWeight.Bold,
@@ -223,9 +235,13 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(0.dp,0.dp,0.dp,30.dp)
                 )
-
+                val description = if (book.volumeInfo.description != null) {
+                    book.volumeInfo.description
+                } else {
+                    "Description unavailable"
+                }
                 Text(
-                    text = book.volumeInfo.description,
+                    text = description,
                     fontStyle = FontStyle.Italic,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center,
@@ -234,7 +250,6 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
 
                 var menuExpanded by remember { mutableStateOf(false) }
                 val context = LocalContext.current
-                val viewModel: BooksViewModel = viewModel()
                 Box(
                     modifier = Modifier
                         .padding(0.dp,10.dp,0.dp,10.dp),
@@ -255,30 +270,56 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
                         onDismissRequest = { menuExpanded = false }
                     ) {
                         DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "MyPhysicalBooks")
-                            Toast.makeText(context, "Added book to My Physical Books", Toast.LENGTH_SHORT).show()
+                            if (category != "MyPhysicalBooks") {
+                                menuExpanded = false
+                                booksViewModel.addBookToCategory(book, "MyPhysicalBooks")
+                                Toast.makeText(
+                                    context,
+                                    "Added book to My Physical Books",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }) {
-                            Text("My Physical Books")
+                            Text("My Physical Books", color = if (category == "MyPhysicalBooks") LightPurple else Color.Unspecified)
                         }
                         DropdownMenuItem(onClick = {
-                            menuExpanded = false
+                            if (category != "Read") {
+                                menuExpanded = false
+                                booksViewModel.addBookToCategory(book, "Read")
+                                Toast.makeText(
+                                    context,
+                                    "Added book to Read Books",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }) {
-                            Text("Read", color = LightPurple)
+                            Text("Read", color = if (category == "Read") LightPurple else Color.Unspecified)
                         }
                         DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "ToBeRead")
-                            Toast.makeText(context, "Added book to To be Read", Toast.LENGTH_SHORT).show()
+                            if (category != "ToBeRead") {
+                                menuExpanded = false
+                                booksViewModel.addBookToCategory(book, "ToBeRead")
+                                Toast.makeText(
+                                    context,
+                                    "Added book to To be Read",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }) {
-                            Text("To Be Read")
+                            Text("To Be Read", color = if (category == "ToBeRead") LightPurple else Color.Unspecified)
                         }
                         DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "CurrentlyReading")
-                            Toast.makeText(context, "Added book to Currently Reading", Toast.LENGTH_SHORT).show()
+                            if (category != "CurrentlyReading") {
+                                menuExpanded = false
+                                booksViewModel.addBookToCategory(book, "CurrentlyReading")
+                                Toast.makeText(
+                                    context,
+                                    "Added book to Currently Reading",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         }) {
-                            Text("Currently Reading")
+                            Text("Currently Reading", color = if (category == "CurrentlyReading") LightPurple else Color.Unspecified)
 
                         }
                     }
@@ -288,23 +329,27 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, viewModel: B
             if (openDialog.value) {
                 AlertDialog(
                     onDismissRequest = { openDialog.value = false },
-                    title = { Text("Remove from Category") },
+                    title = { Text("Remove from ${category} category", fontWeight = FontWeight.Bold) },
                     text = { Text("Are you sure you want to remove this book from this category?") },
                     confirmButton = {
                         Button(
                             onClick = {
                                 Log.d("ViewModel","$book")
-                                viewModel.removeBookFromCategory(book, "Read")
+                                booksViewModel.removeBookFromCategory(book, "Read")
                                 openDialog.value = false
                                 Toast.makeText(context, "Removed from Category", Toast.LENGTH_SHORT).show()
-                            }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LightPurple)
                         ) {
                             Text("Remove")
                         }
                     },
                     dismissButton = {
                         Button(
-                            onClick = { openDialog.value = false }
+                            onClick = { openDialog.value = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LightPurple)
                         ) {
                             Text("Cancel")
                         }

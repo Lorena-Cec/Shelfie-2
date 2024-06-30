@@ -1,6 +1,7 @@
 package com.example.shelfie.view
 
 import android.util.Log
+import androidx.compose.foundation.Image
 import androidx.compose.runtime.derivedStateOf
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
@@ -44,16 +45,34 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import coil.compose.AsyncImage
+import com.example.shelfie.R
 import com.example.shelfie.model.BookItem
 import com.example.shelfie.ui.theme.LightPurple
-import com.example.shelfie.viewmodel.BooksViewModel
+import com.example.shelfie.viewmodel.BookFirebaseViewModel
 
 
 @Composable
-fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = viewModel()) {
+fun ReadScreen(navController: NavController, category: String, booksViewModel: BookFirebaseViewModel = viewModel()) {
     var showDialog by remember { mutableStateOf(false) }
-    val booksRead by booksViewModel.booksRead.collectAsState()
+
+    val books by when (category) {
+        "Read" -> booksViewModel.booksRead.collectAsState()
+        "MyPhysicalBooks" -> booksViewModel.myPhysicalBooks.collectAsState()
+        "ToBeRead" -> booksViewModel.booksToRead.collectAsState()
+        "CurrentlyReading" -> booksViewModel.currentlyReading.collectAsState()
+        else -> remember { mutableStateOf(emptyList<BookItem>()) }
+    }
+
+    var title = ""
+    when (category) {
+        "Read" -> title = "Read Books"
+        "MyPhysicalBooks" -> title = "My Physical Books"
+        "ToBeRead" -> title = "To Be Read Books"
+        "CurrentlyReading" -> title = "Currently Reading Books"
+        else -> title = ""
+    }
 
     LaunchedEffect(Unit) {
         booksViewModel.fetchBooks()
@@ -85,7 +104,7 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
         ) {
             TopBarWithMenu(
                 navController = navController,
-                title = "Read Books",
+                title = title,
                 expanded = expanded,
                 onExpandedChange = { expanded = it }
             )
@@ -95,7 +114,7 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
             LazyColumn(
                 modifier = Modifier.fillMaxSize()
             ) {
-                val rows = booksRead.chunked(3)
+                val rows = books.chunked(3)
                 items(rows.size) { rowIndex ->
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -105,20 +124,50 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                     ) {
                         val rowItems = rows[rowIndex]
                         for (book in rowItems) {
-                            val isbn13Identifier = book.volumeInfo.industryIdentifiers?.find { it.type == "ISBN_13" }
-                            val isbn13 = isbn13Identifier?.identifier
-                            val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
-                            url.insert(4, "s")
-                            LazyLoadingImage(
-                                imageUrl = url.toString(),
-                                contentDescription = book.volumeInfo.title,
-                                modifier = Modifier
-                                    .height(150.dp)
-                                    .width(120.dp)
-                                    .clickable { navController.navigate("readDetails/${isbn13}") }
-                                    .padding(10.dp, 0.dp),
-                                contentScale = ContentScale.Crop
-                            )
+                            if (book.volumeInfo.imageLinks?.thumbnail != null) {
+                                val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+                                val isbn13 = isbn13Identifier?.identifier
+                                val url = "https" + book.volumeInfo.imageLinks.thumbnail.substring(4)
+                                LazyLoadingImage(
+                                    imageUrl = url.toString(),
+                                    contentDescription = book.volumeInfo.title,
+                                    modifier = Modifier
+                                        .height(150.dp)
+                                        .width(120.dp)
+                                        .clickable { navController.navigate("readDetails/${isbn13}/${category}") }
+                                        .padding(10.dp, 0.dp),
+                                    contentScale = ContentScale.Crop
+                                )
+
+                            }
+                            else {
+                                val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+                                val isbn13 = isbn13Identifier?.identifier
+                                Box(
+                                    modifier = Modifier
+                                        .width(120.dp)
+                                        .height(150.dp)
+                                        .clickable { navController.navigate("readDetails/${isbn13}/${category}") },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.coverr),
+                                        contentDescription = book.volumeInfo.title,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                    Text(
+                                        text = book.volumeInfo.title,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(end=10.dp),
+                                        color = Color.White,
+                                        lineHeight = 16.sp,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
+
+
                         }
                         if (rowItems.size < 3) {
                             for (i in 1..(3 - rowItems.size)) {
@@ -148,7 +197,8 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                     },
                     buttons = {
                         Column(
-                            modifier = Modifier.width(250.dp)
+                            modifier = Modifier
+                                .width(250.dp)
                                 .padding(top = 25.dp),
                             verticalArrangement = Arrangement.Center,
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -158,7 +208,8 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                                     showDialog = false
                                     navController.navigate("search_screen")
                                 },
-                                modifier = Modifier.width(200.dp)
+                                modifier = Modifier
+                                    .width(200.dp)
                                     .height(65.dp)
                                     .padding(bottom = 15.dp),
                                 colors = ButtonDefaults.buttonColors(
@@ -174,7 +225,8 @@ fun ReadScreen(navController: NavController, booksViewModel: BooksViewModel = vi
                                     showDialog = false
                                     navController.navigate("barcode_screen")
                                 },
-                                modifier = Modifier.width(200.dp)
+                                modifier = Modifier
+                                    .width(200.dp)
                                     .height(70.dp)
                                     .padding(bottom = 20.dp),
                                 colors = ButtonDefaults.buttonColors(

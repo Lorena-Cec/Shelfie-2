@@ -69,25 +69,29 @@ fun TopBarWithMenu(
                 ) {
                     DropdownMenuItem(onClick = {
                         onExpandedChange(false)
-                        navController.navigate("read_screen")
+                        val category = "Read"
+                        navController.navigate("read_screen/${category}")
                     }) {
                         Text("Read Books")
                     }
                     DropdownMenuItem(onClick = {
                         onExpandedChange(false)
-                        navController.navigate("myphysicalbooks_screen")
+                        val category = "MyPhysicalBooks"
+                        navController.navigate("read_screen/${category}")
                     }) {
                         Text("My Physical Books")
                     }
                     DropdownMenuItem(onClick = {
                         onExpandedChange(false)
-                        navController.navigate("toberead_screen")
+                        val category = "ToBeRead"
+                        navController.navigate("read_screen/${category}")
                     }) {
                         Text("To Be Read Books")
                     }
                     DropdownMenuItem(onClick = {
                         onExpandedChange(false)
-                        navController.navigate("currentlyreading_screen")
+                        val category = "CurrentlyReading"
+                        navController.navigate("read_screen/${category}")
                     }) {
                         Text("Currently Reading")
                     }

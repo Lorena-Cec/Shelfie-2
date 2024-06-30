@@ -28,7 +28,6 @@ import androidx.navigation.NavController
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
 import com.example.shelfie.view.BottomNavigationBar
-import com.example.shelfie.viewmodel.BooksViewModel
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -37,7 +36,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
-fun BarcodeScreen(navController: NavController, viewModel: BooksViewModel) {
+fun BarcodeScreen(navController: NavController) {
     var hasCameraPermission by remember { mutableStateOf(false) }
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -61,7 +60,7 @@ fun BarcodeScreen(navController: NavController, viewModel: BooksViewModel) {
             horizontalAlignment = Alignment.Start
         ) {
             IconButton(
-                onClick = { navController.navigate("myphysicalbooks_screen") },
+                onClick = { navController.popBackStack()},
                 modifier = Modifier.padding(10.dp, 20.dp)
             ) {
                 Icon(
@@ -126,7 +125,7 @@ fun CameraPreviewView(navController: NavController, lifecycleOwner: LifecycleOwn
                                             val rawValue = barcode.rawValue
                                             Log.e("BarcodeScreen", "$rawValue")
                                             if (rawValue != null && barcode.valueType == Barcode.TYPE_ISBN) {
-                                                navController.navigate("myPhysicalBooksDetails/$rawValue")
+                                                navController.navigate("bookDetails/${rawValue}")
                                             }
                                         }
                                     }

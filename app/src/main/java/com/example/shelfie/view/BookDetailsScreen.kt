@@ -3,7 +3,9 @@ package com.example.shelfie.view
 import android.annotation.SuppressLint
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,15 +45,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.shelfie.BuildConfig
+import com.example.shelfie.R
 import com.example.shelfie.api.RetrofitClient
 import com.example.shelfie.model.BookSearchResponse
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
-import com.example.shelfie.viewmodel.BooksViewModel
+import com.example.shelfie.viewmodel.BookFirebaseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -60,20 +65,20 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookDetailsScreen(navController: NavController, isbn13: String) {
-    Log.d("BookDetailsScreen", "ISBN-13: $isbn13")
     var bookResponse by remember { mutableStateOf<BookSearchResponse?>(null) }
+    val context = LocalContext.current
+    val apiKey = BuildConfig.API_KEY
+
     LaunchedEffect(Unit) {
         val response = withContext(Dispatchers.IO) {
             RetrofitClient.apiService.searchBooks(
                 query = "isbn:$isbn13",
-                apiKey = "AIzaSyAHMUBEm1_QCPLzS46-Z_knen7isgxqCvM",
+                apiKey = apiKey,
                 maxResults = 1,
             )
         }
-        Log.d("BookDetailsScreen", "Response body: ${response.body()}")
         if (response.isSuccessful) {
             bookResponse = response.body()
-            Log.d("BookDetailsScreen", "ISBN-13: $bookResponse")
         }
         else{
             Log.d("BookDetailsScreen", "Fail ")
@@ -102,10 +107,7 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                 verticalArrangement = Arrangement.Top,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // Naslovnica knjige
                 if (book.volumeInfo.imageLinks != null) {
-                    val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
-                    url.insert(4, "s")
                     Box(
                         modifier = Modifier
                             .width(200.dp)
@@ -114,17 +116,33 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                             .background(LightPurple, shape = RoundedCornerShape(5.dp)),
                         contentAlignment = Alignment.Center
                     ) {
+                        val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
+                        url.insert(4, "s")
                         LazyLoadingImage(
                             imageUrl = url.toString(),
                             contentDescription = book.volumeInfo.title,
-                            modifier = Modifier.width(150.dp)
-                                .height(220.dp),
+                            modifier = Modifier
+                                .width(150.dp)
+                                .height(200.dp),
                             contentScale = ContentScale.Crop
                         )
+                    }
 
+                }
+                else{
+                    val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
+                    val isbn13 = isbn13Identifier?.identifier
+                    Box(modifier = Modifier.width(250.dp)
+                        .height(250.dp),){
+                        Image(
+                            painter = painterResource(id = R.drawable.cover),//
+                            modifier = Modifier
+                                .width(250.dp)
+                                .height(250.dp),
+                            contentDescription = book.volumeInfo.title,
+                        )
                     }
                 }
-
                 Text(
                     text = book.volumeInfo.title,
                     fontWeight = FontWeight.Bold,
@@ -145,17 +163,20 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(0.dp,0.dp,0.dp,30.dp)
                 )
-
+                val description = if (book.volumeInfo.description != null) {
+                    book.volumeInfo.description
+                } else {
+                    "Description unavailable"
+                }
                 Text(
-                    text = book.volumeInfo.description,
+                    text = description,
                     fontStyle = FontStyle.Italic,
                     fontSize = 16.sp,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 18.dp)
                 )
                 var menuExpanded by remember { mutableStateOf(false) }
-                val context = LocalContext.current
-                val viewModel: BooksViewModel = viewModel()
+                val viewModel: BookFirebaseViewModel = viewModel()
                 Box(
                     modifier = Modifier
                         .padding(0.dp,10.dp,0.dp,50.dp),

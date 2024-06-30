@@ -1,25 +1,17 @@
 package com.example.shelfie.view
 
-import android.app.Activity
-import android.net.Uri
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.navigation.NavController
@@ -31,15 +23,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -48,30 +37,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.rememberImagePainter
-import com.example.shelfie.R
 import com.example.shelfie.model.BookItem
 import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
 import com.example.shelfie.ui.theme.LigtherPurple
-import com.google.firebase.firestore.FirebaseFirestore
-import com.example.shelfie.viewmodel.BooksViewModel
+import com.example.shelfie.viewmodel.FavoritesViewModel
+import com.example.shelfie.viewmodel.QuotesViewModel
 
 @Composable
-fun ProfileScreen(navController: NavController, viewModel: BooksViewModel, onLogout: () -> Unit) {
+fun ProfileScreen(navController: NavController, onLogout: () -> Unit) {
     var quoteText by remember { mutableStateOf("") }
     var bookTitle by remember { mutableStateOf("") }
     var pageNumber by remember { mutableStateOf("") }
     var showAddDialog by remember { mutableStateOf(false) }
-
-    val favorites by viewModel.favorites.collectAsState()
-    val favoriteQuotes by viewModel.favoriteQuotes.collectAsState()
+    val favoritesViewModel: FavoritesViewModel = viewModel()
+    val quotesViewModel: QuotesViewModel = viewModel()
+    val favorites by favoritesViewModel.favorites.collectAsState()
+    val favoriteQuotes by quotesViewModel.favoriteQuotes.collectAsState()
 
     LaunchedEffect(Unit) {
-        viewModel.fetchFavorites()
-        viewModel.fetchFavoriteQuotes()
+        favoritesViewModel.fetchFavorites()
+        quotesViewModel.fetchFavoriteQuotes()
     }
         Scaffold(
             bottomBar = { BottomNavigationBar(navController = navController) }
@@ -170,7 +157,7 @@ fun ProfileScreen(navController: NavController, viewModel: BooksViewModel, onLog
                             pageNumber = pageNumber,
                             navController = navController
                         ) {
-                            viewModel.removeQuote(quote, bookTitle, pageNumber)
+                            quotesViewModel.removeQuote(quote, bookTitle, pageNumber)
                         }
                     }
 
@@ -186,7 +173,7 @@ fun ProfileScreen(navController: NavController, viewModel: BooksViewModel, onLog
             onDismiss = { showAddDialog = false },
             onSave = {
                 if (quoteText.isNotBlank()) {
-                    viewModel.addFavoriteQuote(quoteText, bookTitle, pageNumber)
+                    quotesViewModel.addFavoriteQuote(quoteText, bookTitle, pageNumber)
                     showAddDialog = false
                     quoteText = ""
                     bookTitle = ""
@@ -222,7 +209,7 @@ fun BookItemSurface(book: BookItem, navController: NavController) {
             contentDescription = book.volumeInfo.title,
             modifier = Modifier
                 .size(150.dp)
-                .clickable { navController.navigate("readDetails/${isbn13}") },
+                .clickable { navController.navigate("readDetails/${isbn13}/Read") },
             contentScale = ContentScale.Crop
         )
     }
@@ -239,8 +226,8 @@ fun QuoteItem(quote: String, bookTitle: String, pageNumber: String, navControlle
             confirmButton = {
                 Button(onClick = {
                     onRemoveQuote()
-                    navController.navigate("profile_screen")
                     showDialog = false
+                    navController.navigate("profile_screen")
                 }, colors = ButtonDefaults.buttonColors(
                     containerColor = LightPurple
                 )) {
@@ -327,6 +314,7 @@ fun AddQuoteDialog(
     pageNumber: String,
     onPageNumberChanged: (String) -> Unit
 ) {
+    val context = LocalContext.current
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add Quote") },
@@ -350,7 +338,13 @@ fun AddQuoteDialog(
             }
         },
         confirmButton = {
-            Button(onClick = onSave, colors = ButtonDefaults.buttonColors(
+            Button(onClick = {
+                if (quoteText.isNotBlank()) {
+                    onSave()
+                } else {
+                    Toast.makeText(context, "Quote cannot be empty", Toast.LENGTH_SHORT).show()
+                }},
+                colors = ButtonDefaults.buttonColors(
                 containerColor = LightPurple
             )) {
                 Text("Save")

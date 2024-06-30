@@ -1,5 +1,6 @@
 package com.example.shelfie.view
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,9 +17,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.shelfie.R
 import com.example.shelfie.ui.theme.LightPurple
 
 
@@ -60,14 +63,14 @@ fun BottomNavigationBar(navController: NavController) {
                 )
             }
             IconButton(
-                onClick = { navController.navigate("read_screen") },
+                onClick = { navController.navigate("read_screen/Read") },
                 modifier = Modifier.size(40.dp)
             ) {
                 Icon(
-                    Icons.Filled.List,
+                    painter = painterResource(if (currentRoute?.startsWith("read_screen") == true)  R.drawable.bookwhite else R.drawable.book),
                     contentDescription = "Library",
-                    modifier = Modifier.size(35.dp),
-                    tint = if (currentRoute == "read_screen") Color.White else Color.Black
+                    modifier = Modifier.size(25.dp),
+                    tint = if (currentRoute?.startsWith("read_screen") == true) Color.White else Color.Black
                 )
             }
             IconButton(

@@ -1,3 +1,7 @@
+import org.apache.tools.ant.property.GetProperty
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
@@ -18,6 +22,15 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        val readProperties = Properties()
+        val localPropertiesFile = rootProject.file("apikeys.properties")
+
+        if (localPropertiesFile.exists()) {
+            readProperties.load(FileInputStream(localPropertiesFile))
+        }
+        
+        buildConfigField("String", "API_KEY", readProperties.getProperty("ApiKey", "\"default_value_if_missing\""))
+
     }
 
     buildTypes {
@@ -35,6 +48,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.4.4"
