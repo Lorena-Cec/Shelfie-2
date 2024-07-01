@@ -84,8 +84,8 @@ fun ReadScreen(navController: NavController, category: String, booksViewModel: B
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
-                    .padding(16.dp) // Prilagodite padding po potrebi
-                    .border(1.dp, Color.White, shape = CircleShape) // Postavite bijeli border
+                    .padding(16.dp)
+                    .border(1.dp, Color.White, shape = CircleShape)
             ) {
                 FloatingActionButton(
                     onClick = { showDialog = true },
