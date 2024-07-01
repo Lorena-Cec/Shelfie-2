@@ -85,32 +85,18 @@ dependencies {
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.retrofit)
     implementation(libs.gsonConverter)
-    // Compose dependencies
+
     implementation("androidx.compose.ui:ui:1.6.7")
     implementation("androidx.compose.material:material:1.6.7")
     implementation("androidx.compose.ui:ui-tooling:1.6.7")
-
-    // Lifecycle dependencies
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.1")
-
-    // Compose runtime
     implementation("androidx.compose.runtime:runtime-livedata:1.6.7")
     implementation("androidx.compose.runtime:runtime-rxjava2:1.6.7")
-
-    // Compose tooling preview
     implementation("androidx.compose.ui:ui-tooling-preview:1.6.7")
-
-    // Activity Compose
     implementation("androidx.activity:activity-compose:1.4.0")
-
-    // Hilt (optional, but recommended for DI)
     implementation("com.google.dagger:hilt-android:2.40.5")
-
-    // Lifecycle ViewModel Compose
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
-
-    // Hilt navigation compose
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     implementation ("io.coil-kt:coil-compose:2.5.0")

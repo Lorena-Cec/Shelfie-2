@@ -3,6 +3,7 @@ package com.example.shelfie.viewmodel
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.util.Log
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.shelfie.R
@@ -98,27 +99,50 @@ class BookFirebaseViewModel : ViewModel() {
         )
     }
 
-    fun addBookToCategory(book: BookItem, category: String) {
-        when (category) {
-            "Read" -> {
-                _booksRead.value += book
-                updateFirestoreCategory(category, book)
+    fun addBookToCategory(book: BookItem, category: String, context: Context) {
+        val currentUser = Firebase.auth.currentUser
+        currentUser?.let { user ->
+            viewModelScope.launch {
+                fetchBooksFromFirestore(user.uid) { currentlyReadingBooks, readBooks, toBeReadBooks, myPhysicalBooksList ->
+                    val bookAlreadyInCategory = when (category) {
+                        "Read" -> readBooks.contains(book)
+                        "ToBeRead" -> toBeReadBooks.contains(book)
+                        "MyPhysicalBooks" -> myPhysicalBooksList.contains(book)
+                        "CurrentlyReading" -> currentlyReadingBooks.contains(book)
+                        else -> throw IllegalArgumentException("Unsupported category: $category")
+                    }
+                    if (bookAlreadyInCategory) {
+                        Toast.makeText(context, "Book already in $category", Toast.LENGTH_SHORT).show()
+                    } else {
+                        when (category) {
+                            "Read" -> {
+                                _booksRead.value += book
+                                updateFirestoreCategory(category, book)
+                                Toast.makeText(context, "Added book to Read Books", Toast.LENGTH_SHORT).show()
+                            }
+                            "ToBeRead" -> {
+                                _booksToRead.value += book
+                                updateFirestoreCategory(category, book)
+                                Toast.makeText(context, "Added book to To Be Read Books", Toast.LENGTH_SHORT).show()
+                            }
+                            "MyPhysicalBooks" -> {
+                                _myPhysicalBooks.value += book
+                                updateFirestoreCategory(category, book)
+                                Toast.makeText(context, "Added book to My Physical Books", Toast.LENGTH_SHORT).show()
+                            }
+                            "CurrentlyReading" -> {
+                                _currentlyReading.value += book
+                                updateFirestoreCategory(category, book)
+                                Toast.makeText(context, "Added book to Currently Reading Books", Toast.LENGTH_SHORT).show()
+                            }
+                            else -> throw IllegalArgumentException("Unsupported category: $category")
+                        }
+                    }
+                }
             }
-            "ToBeRead" -> {
-                _booksToRead.value += book
-                updateFirestoreCategory(category, book)
-            }
-            "MyPhysicalBooks" -> {
-                _myPhysicalBooks.value += book
-                updateFirestoreCategory(category, book)
-            }
-            "CurrentlyReading" -> {
-                _currentlyReading.value += book
-                updateFirestoreCategory(category, book)
-            }
-            else -> throw IllegalArgumentException("Unsupported category: $category")
         }
     }
+
 
     fun removeBookFromCategory(book: BookItem, category: String) {
         when (category) {

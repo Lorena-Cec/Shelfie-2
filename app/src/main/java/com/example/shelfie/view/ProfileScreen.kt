@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -37,6 +38,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.shelfie.model.BookItem
 import com.example.shelfie.ui.theme.DarkPurple
@@ -333,16 +335,18 @@ fun AddQuoteDialog(
                 TextField(
                     value = pageNumber,
                     onValueChange = onPageNumberChanged,
-                    label = { Text("Page") }
+                    label = { Text("Page") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             }
         },
         confirmButton = {
             Button(onClick = {
-                if (quoteText.isNotBlank()) {
-                    onSave()
-                } else {
+                if (quoteText.isBlank()) {
                     Toast.makeText(context, "Quote cannot be empty", Toast.LENGTH_SHORT).show()
+                } else {
+                    onSave()
+                    Toast.makeText(context, "Quote saved", Toast.LENGTH_SHORT).show()
                 }},
                 colors = ButtonDefaults.buttonColors(
                 containerColor = LightPurple

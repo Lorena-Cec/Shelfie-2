@@ -12,33 +12,26 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavController
-import com.example.shelfie.ui.theme.DarkPurple
 import com.example.shelfie.ui.theme.LightPurple
 import com.example.shelfie.view.BottomNavigationBar
-import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 
-@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun BarcodeScreen(navController: NavController) {
     var hasCameraPermission by remember { mutableStateOf(false) }
-    val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
     val requestPermissionLauncher = rememberLauncherForActivityResult(
@@ -64,7 +57,7 @@ fun BarcodeScreen(navController: NavController) {
                 modifier = Modifier.padding(10.dp, 20.dp)
             ) {
                 Icon(
-                    Icons.Default.ArrowBack, contentDescription = "Back",
+                    Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back",
                     tint = LightPurple)
             }
             Box(modifier = Modifier.fillMaxSize()) {
@@ -125,6 +118,7 @@ fun CameraPreviewView(navController: NavController, lifecycleOwner: LifecycleOwn
                                             val rawValue = barcode.rawValue
                                             Log.e("BarcodeScreen", "$rawValue")
                                             if (rawValue != null && barcode.valueType == Barcode.TYPE_ISBN) {
+                                                Log.e("BarcodeScreen", "$rawValue")
                                                 navController.navigate("bookDetails/${rawValue}")
                                             }
                                         }

@@ -2,10 +2,8 @@ package com.example.shelfie.view
 
 import android.annotation.SuppressLint
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -79,20 +78,33 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
         }
         if (response.isSuccessful) {
             bookResponse = response.body()
+            if (bookResponse?.items.isNullOrEmpty()) {
+                bookResponse = null
+            }
         }
         else{
             Log.d("BookDetailsScreen", "Fail ")
         }
     }
-    bookResponse?.items?.firstOrNull()?.let { book ->
+    if (bookResponse == null) {
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("Book Details", color = androidx.compose.ui.graphics.Color.White, fontSize = 20.sp)},
+                    title = {
+                        Text(
+                            "Book Details",
+                            color = androidx.compose.ui.graphics.Color.White,
+                            fontSize = 20.sp
+                        )
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = androidx.compose.ui.graphics.Color.White)
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = androidx.compose.ui.graphics.Color.White
+                            )
                         }
                     },
                     colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = DarkPurple)
@@ -102,128 +114,172 @@ fun BookDetailsScreen(navController: NavController, isbn13: String) {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(10.dp,120.dp,10.dp,10.dp)
+                    .padding(10.dp, 120.dp, 10.dp, 10.dp)
                     .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.Top,
+                verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (book.volumeInfo.imageLinks != null) {
-                    Box(
-                        modifier = Modifier
-                            .width(200.dp)
-                            .padding(0.dp,0.dp,0.dp,30.dp)
-                            .height(270.dp)
-                            .background(LightPurple, shape = RoundedCornerShape(5.dp)),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        val url: StringBuilder = StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
-                        url.insert(4, "s")
-                        LazyLoadingImage(
-                            imageUrl = url.toString(),
-                            contentDescription = book.volumeInfo.title,
+                Text(text = "ERROR", fontSize = 25.sp)
+                Spacer(modifier = Modifier.size(20.dp))
+                Text(text = "Book cannot be found by this ISBN.", fontSize = 20.sp)
+                Spacer(modifier = Modifier.size(20.dp))
+                Text(text = "Try searching the book by title.",fontSize = 20.sp, modifier = Modifier.padding(bottom = 50.dp))
+            }
+        }
+    } else {
+        bookResponse?.items?.firstOrNull()?.let { book ->
+            Scaffold(
+                topBar = {
+                    TopAppBar(
+                        title = {
+                            Text(
+                                "Book Details",
+                                color = androidx.compose.ui.graphics.Color.White,
+                                fontSize = 20.sp
+                            )
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        navigationIcon = {
+                            IconButton(onClick = { navController.popBackStack() }) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = "Back",
+                                    tint = androidx.compose.ui.graphics.Color.White
+                                )
+                            }
+                        },
+                        colors = TopAppBarDefaults.smallTopAppBarColors(containerColor = DarkPurple)
+                    )
+                },
+            ) { innerPadding ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(10.dp, 120.dp, 10.dp, 10.dp)
+                        .verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    if (book.volumeInfo.imageLinks != null) {
+                        Box(
                             modifier = Modifier
-                                .width(150.dp)
-                                .height(200.dp),
-                            contentScale = ContentScale.Crop
-                        )
-                    }
+                                .width(200.dp)
+                                .padding(0.dp, 0.dp, 0.dp, 30.dp)
+                                .height(270.dp)
+                                .background(LightPurple, shape = RoundedCornerShape(5.dp)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val url: StringBuilder =
+                                StringBuilder(book.volumeInfo.imageLinks?.thumbnail)
+                            url.insert(4, "s")
+                            LazyLoadingImage(
+                                imageUrl = url.toString(),
+                                contentDescription = book.volumeInfo.title,
+                                modifier = Modifier
+                                    .width(150.dp)
+                                    .height(200.dp),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
 
-                }
-                else{
-                    val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
-                    val isbn13 = isbn13Identifier?.identifier
-                    Box(modifier = Modifier.width(250.dp)
-                        .height(250.dp),){
-                        Image(
-                            painter = painterResource(id = R.drawable.cover),//
+                    } else {
+                        Box(
                             modifier = Modifier
                                 .width(250.dp)
                                 .height(250.dp),
-                            contentDescription = book.volumeInfo.title,
-                        )
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.cover),//
+                                modifier = Modifier
+                                    .width(250.dp)
+                                    .height(250.dp),
+                                contentDescription = book.volumeInfo.title,
+                            )
+                        }
                     }
-                }
-                Text(
-                    text = book.volumeInfo.title,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 24.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(vertical = 2.dp)
-                )
+                    Text(
+                        text = book.volumeInfo.title,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 24.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(vertical = 2.dp)
+                    )
 
-                val authorsText = if (book.volumeInfo.authors != null && book.volumeInfo.authors.isNotEmpty()) {
-                    book.volumeInfo.authors.joinToString(", ")
-                } else {
-                    "Unknown"
-                }
-                Text(
-                    text = authorsText,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 19.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(0.dp,0.dp,0.dp,30.dp)
-                )
-                val description = if (book.volumeInfo.description != null) {
-                    book.volumeInfo.description
-                } else {
-                    "Description unavailable"
-                }
-                Text(
-                    text = description,
-                    fontStyle = FontStyle.Italic,
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 18.dp)
-                )
-                var menuExpanded by remember { mutableStateOf(false) }
-                val viewModel: BookFirebaseViewModel = viewModel()
-                Box(
-                    modifier = Modifier
-                        .padding(0.dp,10.dp,0.dp,50.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Button(
-                        onClick = { menuExpanded = true },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = LightPurple
-                        )
-                    ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Book to Shelf", color = androidx.compose.ui.graphics.Color.White, fontSize = 15.sp)
+                    val authorsText =
+                        if (book.volumeInfo.authors != null && book.volumeInfo.authors.isNotEmpty()) {
+                            book.volumeInfo.authors.joinToString(", ")
+                        } else {
+                            "Unknown"
+                        }
+                    Text(
+                        text = authorsText,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 19.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(0.dp, 0.dp, 0.dp, 30.dp)
+                    )
+                    val description = if (book.volumeInfo.description != null) {
+                        book.volumeInfo.description
+                    } else {
+                        "Description unavailable"
                     }
-                    DropdownMenu(
-                        expanded = menuExpanded,
-                        onDismissRequest = { menuExpanded = false }
+                    Text(
+                        text = description,
+                        fontStyle = FontStyle.Italic,
+                        fontSize = 16.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 18.dp)
+                    )
+                    var menuExpanded by remember { mutableStateOf(false) }
+                    val viewModel: BookFirebaseViewModel = viewModel()
+                    Box(
+                        modifier = Modifier
+                            .padding(0.dp, 10.dp, 0.dp, 50.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "MyPhysicalBooks")
-                            Toast.makeText(context, "Added book to My Physical Books", Toast.LENGTH_SHORT).show()
-                        }) {
-                            Text("My Physical Books")
+                        Button(
+                            onClick = { menuExpanded = true },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = LightPurple
+                            )
+                        ) {
+                            Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                "Add Book to Shelf",
+                                color = androidx.compose.ui.graphics.Color.White,
+                                fontSize = 15.sp
+                            )
                         }
-                        DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "Read")
-                            Toast.makeText(context, "Added book to Read", Toast.LENGTH_SHORT).show()
-                        }) {
-                            Text("Read")
-                        }
-                        DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "ToBeRead")
-                            Toast.makeText(context, "Added book to To be Read", Toast.LENGTH_SHORT).show()
-                        }) {
-                            Text("To Be Read")
-                        }
-                        DropdownMenuItem(onClick = {
-                            menuExpanded = false
-                            viewModel.addBookToCategory(book, "CurrentlyReading")
-                            Toast.makeText(context, "Added book to Currently Reading", Toast.LENGTH_SHORT).show()
-                        }) {
-                            Text("Currently Reading")
+                        DropdownMenu(
+                            expanded = menuExpanded,
+                            onDismissRequest = { menuExpanded = false }
+                        ) {
+                            DropdownMenuItem(onClick = {
+                                menuExpanded = false
+                                viewModel.addBookToCategory(book, "MyPhysicalBooks", context)
+                            }) {
+                                Text("My Physical Books")
+                            }
+                            DropdownMenuItem(onClick = {
+                                menuExpanded = false
+                                viewModel.addBookToCategory(book, "Read", context)
+                            }) {
+                                Text("Read")
+                            }
+                            DropdownMenuItem(onClick = {
+                                menuExpanded = false
+                                viewModel.addBookToCategory(book, "ToBeRead", context)
+                            }) {
+                                Text("To Be Read")
+                            }
+                            DropdownMenuItem(onClick = {
+                                menuExpanded = false
+                                viewModel.addBookToCategory(book, "CurrentlyReading", context)
+                            }) {
+                                Text("Currently Reading")
 
+                            }
                         }
                     }
                 }

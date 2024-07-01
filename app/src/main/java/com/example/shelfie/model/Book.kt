@@ -7,7 +7,18 @@ data class BookSearchResponse(
 
 data class BookItem(
     val volumeInfo: VolumeInfo
-)
+){
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is BookItem) return false
+        val identifiers = volumeInfo.industryIdentifiers.map { it.identifier }
+        val otherIdentifiers = other.volumeInfo.industryIdentifiers.map { it.identifier }
+        return identifiers.containsAll(otherIdentifiers) && otherIdentifiers.containsAll(identifiers)
+    }
+    override fun hashCode(): Int {
+        return volumeInfo.industryIdentifiers.map { it.identifier.hashCode() }.sum()
+    }
+}
 
 data class VolumeInfo(
     val title: String,

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,7 +36,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Button
@@ -63,7 +61,6 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
 import com.example.shelfie.R
 import com.example.shelfie.api.RetrofitClient
 import com.example.shelfie.model.BookSearchResponse
@@ -73,7 +70,6 @@ import com.example.shelfie.viewmodel.BookFirebaseViewModel
 import com.example.shelfie.viewmodel.FavoritesViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter", "StateFlowValueCalledInComposition")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -159,8 +155,6 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
 
                 }
                 else{
-                    val isbn13Identifier = book.volumeInfo.industryIdentifiers.find { it.type == "ISBN_13" }
-                    val isbn13 = isbn13Identifier?.identifier
                     Box(modifier = Modifier.width(250.dp)
                         .height(250.dp),){
                         Image(
@@ -249,7 +243,6 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                 )
 
                 var menuExpanded by remember { mutableStateOf(false) }
-                val context = LocalContext.current
                 Box(
                     modifier = Modifier
                         .padding(0.dp,10.dp,0.dp,10.dp),
@@ -263,7 +256,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                     ) {
                         Icon(imageVector = Icons.Default.Add, contentDescription = "Add")
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Book to Shelf", color = androidx.compose.ui.graphics.Color.White, fontSize = 15.sp)
+                        Text("Add Book to Shelf", color = Color.White, fontSize = 15.sp)
                     }
                     DropdownMenu(
                         expanded = menuExpanded,
@@ -272,12 +265,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                         DropdownMenuItem(onClick = {
                             if (category != "MyPhysicalBooks") {
                                 menuExpanded = false
-                                booksViewModel.addBookToCategory(book, "MyPhysicalBooks")
-                                Toast.makeText(
-                                    context,
-                                    "Added book to My Physical Books",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                booksViewModel.addBookToCategory(book, "MyPhysicalBooks", context)
                             }
                         }) {
                             Text("My Physical Books", color = if (category == "MyPhysicalBooks") LightPurple else Color.Unspecified)
@@ -285,12 +273,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                         DropdownMenuItem(onClick = {
                             if (category != "Read") {
                                 menuExpanded = false
-                                booksViewModel.addBookToCategory(book, "Read")
-                                Toast.makeText(
-                                    context,
-                                    "Added book to Read Books",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                booksViewModel.addBookToCategory(book, "Read", context)
                             }
                         }) {
                             Text("Read", color = if (category == "Read") LightPurple else Color.Unspecified)
@@ -298,12 +281,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                         DropdownMenuItem(onClick = {
                             if (category != "ToBeRead") {
                                 menuExpanded = false
-                                booksViewModel.addBookToCategory(book, "ToBeRead")
-                                Toast.makeText(
-                                    context,
-                                    "Added book to To be Read",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                booksViewModel.addBookToCategory(book, "ToBeRead", context)
                             }
                         }) {
                             Text("To Be Read", color = if (category == "ToBeRead") LightPurple else Color.Unspecified)
@@ -311,12 +289,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                         DropdownMenuItem(onClick = {
                             if (category != "CurrentlyReading") {
                                 menuExpanded = false
-                                booksViewModel.addBookToCategory(book, "CurrentlyReading")
-                                Toast.makeText(
-                                    context,
-                                    "Added book to Currently Reading",
-                                    Toast.LENGTH_SHORT
-                                ).show()
+                                booksViewModel.addBookToCategory(book, "CurrentlyReading", context)
                             }
                         }) {
                             Text("Currently Reading", color = if (category == "CurrentlyReading") LightPurple else Color.Unspecified)
