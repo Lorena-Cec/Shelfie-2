@@ -3,6 +3,7 @@ package com.example.shelfie.view
 import androidx.compose.foundation.Image
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import com.example.shelfie.ui.theme.DarkPurple
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -79,15 +81,23 @@ fun ReadScreen(navController: NavController, category: String, booksViewModel: B
     Scaffold(
         bottomBar = { BottomNavigationBar(navController = navController) },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = { showDialog = true },
-                containerColor = DarkPurple
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .padding(16.dp) // Prilagodite padding po potrebi
+                    .border(1.dp, Color.White, shape = CircleShape) // Postavite bijeli border
             ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Add Book",
-                    tint = Color.White
-                )
+                FloatingActionButton(
+                    onClick = { showDialog = true },
+                    containerColor = DarkPurple,
+                    shape = CircleShape
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Add Book",
+                        tint = Color.White
+                    )
+                }
             }
         }
     ) { innerPadding ->
