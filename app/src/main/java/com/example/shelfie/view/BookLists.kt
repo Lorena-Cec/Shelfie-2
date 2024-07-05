@@ -120,28 +120,24 @@ fun BookLists(navController: NavController, viewModel: BookFirebaseViewModel, bo
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "MyPhysicalBooks", context)
-                        Toast.makeText(context, "Added book to My Physical Books", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("My Physical Books")
                     }
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "Read", context)
-                        Toast.makeText(context, "Added book to Read", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("Read")
                     }
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "ToBeRead", context)
-                        Toast.makeText(context, "Added book to To be Read", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("To Be Read")
                     }
                     DropdownMenuItem(onClick = {
                         menuExpanded = false
                         viewModel.addBookToCategory(book, "CurrentlyReading", context)
-                        Toast.makeText(context, "Added book to Currently Reading", Toast.LENGTH_SHORT).show()
                     }) {
                         Text("Currently Reading")
 

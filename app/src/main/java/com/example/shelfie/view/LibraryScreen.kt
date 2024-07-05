@@ -85,11 +85,11 @@ fun ReadScreen(navController: NavController, category: String, booksViewModel: B
                 contentAlignment = Alignment.Center,
                 modifier = Modifier
                     .padding(16.dp)
-                    .border(1.dp, Color.White, shape = CircleShape)
+                    .border(3.dp, Color.White, shape = CircleShape)
             ) {
                 FloatingActionButton(
                     onClick = { showDialog = true },
-                    containerColor = DarkPurple,
+                    containerColor = LightPurple,
                     shape = CircleShape
                 ) {
                     Icon(

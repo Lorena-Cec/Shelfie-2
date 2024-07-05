@@ -308,7 +308,7 @@ fun ReadDetailsScreen(navController: NavController, isbn13: String, category: St
                         Button(
                             onClick = {
                                 Log.d("ViewModel","$book")
-                                booksViewModel.removeBookFromCategory(book, "Read")
+                                booksViewModel.removeBookFromCategory(book, category)
                                 openDialog.value = false
                                 Toast.makeText(context, "Removed from Category", Toast.LENGTH_SHORT).show()
                             },

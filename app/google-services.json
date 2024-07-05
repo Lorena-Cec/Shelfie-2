@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "826411995144",
+    "project_id": "shelfie-fca94",
+    "storage_bucket": "shelfie-fca94.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:826411995144:android:2656b581ceb62e6c0b01bd",
+        "android_client_info": {
+          "package_name": "com.example.shelfie"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "826411995144-2blvtgi1k7vprsrft54leu2jqbjma2u1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPHp88NVyiRU5lpyJ65viiAkzTo4DbJGQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "826411995144-2blvtgi1k7vprsrft54leu2jqbjma2u1.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
